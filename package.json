@@ -1,0 +1,21 @@
+{
+  "name": "remote-pdf-printer",
+  "version": "1.0.0",
+  "description": "Simple HTTP API to print HTML/urls to PDF",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/NobletSolutions/remote-pdf-printer"
+  },
+  "author": "Nathanael Noblet",
+  "license": "MIT",
+  "dependencies": {
+    "body-parser": "^1.17.2",
+    "express": "^4.15.3",
+    "html-pdf-chrome": "^0.2.0",
+    "unique-filename": "^1.1.0"
+  }
+}
