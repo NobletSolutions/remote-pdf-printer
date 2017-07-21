@@ -1,5 +1,8 @@
 /**
  * Created by gnat on 18/07/17.
+ * TODO
+ *   Catch errors - Filesystem when we can't write
+ *                - Unable to talk to chrome
  */
 'use strict';
 
@@ -22,7 +25,6 @@ const options = {
 
 exports.print_url = function(req, res) {
     var randomPrefixedTmpfile = uniqueFilename(options.dir);
-	console.log('File: '+randomPrefixedTmpfile);
     htmlPdf.create(req.query.url, options.htmlPDF).then((pdf) => pdf.toFile(randomPrefixedTmpfile));
     res.json('{url: "'+req.query.url+'", pdf: "'+path.basename(randomPrefixedTmpfile)+'"}');
 };
