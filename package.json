@@ -17,5 +17,10 @@
     "express": "^4.15.3",
     "html-pdf-chrome": "^0.2.0",
     "unique-filename": "^1.1.0"
-  }
+  },
+  "files": [
+	  "server.js",
+	  "api",
+	  "package.json"
+  ]
 }
