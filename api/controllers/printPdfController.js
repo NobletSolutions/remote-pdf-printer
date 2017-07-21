@@ -3,6 +3,7 @@
  * TODO
  *   Catch errors - Filesystem when we can't write
  *                - Unable to talk to chrome
+ *                - Receiving URL without protocol
  */
 'use strict';
 
@@ -26,13 +27,13 @@ const options = {
 exports.print_url = function(req, res) {
     var randomPrefixedTmpfile = uniqueFilename(options.dir);
     htmlPdf.create(req.query.url, options.htmlPDF).then((pdf) => pdf.toFile(randomPrefixedTmpfile));
-    res.json('{url: "'+req.query.url+'", pdf: "'+path.basename(randomPrefixedTmpfile)+'"}');
+    res.json({url: req.query.url, pdf: path.basename(randomPrefixedTmpfile)});
 };
 
 exports.print_html = function(req, res) {
     var randomPrefixedTmpfile = uniqueFilename(options.dir);
     htmlPdf.create(req.body.data, options.htmlPDF).then((pdf) => pdf.toFile(randomPrefixedTmpfile));
-    res.json('{length: '+req.body.data.length+', pdf: "'+path.basename(randomPrefixedTmpfile)+'"}}');
+    res.json({length: req.body.data.length, pdf: path.basename(randomPrefixedTmpfile)});
 };
 
 exports.get_pdf = function(req,res) {
