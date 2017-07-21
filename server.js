@@ -4,16 +4,6 @@ var https = require('https');
 app = express();
 
 const options = {
-	htmlPDF: {
-		port: process.env.CHROME_PORT || 1337,
-		printOptions: {
-		    marginTop: 0,
-		    marginRight: 0,
-		    marginLeft:0,
-		    printBackground: true,
-		}
-	},
-	dir: process.env.DIR || __dirname+'/files',
 	port: process.env.PORT || 3000,
 	keyPath: process.env.SSL_KEY || 'privkey.pem',
 	certPath: process.env.SSL_CERT || 'cert.pem'

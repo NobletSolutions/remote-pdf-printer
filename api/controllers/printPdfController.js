@@ -7,10 +7,22 @@ const uniqueFilename = require('unique-filename');
 const htmlPdf = require('html-pdf-chrome');
 const path = require('path');
 const fs = require('fs');
-
+const options = {
+	htmlPDF: {
+		port: process.env.CHROME_PORT || 1337,
+		printOptions: {
+		    marginTop: 0,
+		    marginRight: 0,
+		    marginLeft:0,
+		    printBackground: true,
+		}
+	},
+	dir: process.env.DIR || __dirname+'/../../files/'
+};
 
 exports.print_url = function(req, res) {
     var randomPrefixedTmpfile = uniqueFilename(options.dir);
+	console.log('File: '+randomPrefixedTmpfile);
     htmlPdf.create(req.query.url, options.htmlPDF).then((pdf) => pdf.toFile(randomPrefixedTmpfile));
     res.json('{url: "'+req.query.url+'", pdf: "'+path.basename(randomPrefixedTmpfile)+'"}');
 };
