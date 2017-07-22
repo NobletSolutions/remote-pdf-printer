@@ -1,6 +1,6 @@
 {
   "name": "remote-pdf-printer",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Simple HTTP API to print HTML/urls to PDF",
   "main": "server.js",
   "scripts": {
@@ -16,6 +16,7 @@
     "body-parser": "^1.17.2",
     "express": "^4.15.3",
     "html-pdf-chrome": "^0.2.0",
+    "morgan": "^1.8.2",
     "unique-filename": "^1.1.0"
   },
   "files": [
