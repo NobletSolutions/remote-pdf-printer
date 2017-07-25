@@ -79,6 +79,11 @@ function servePdf(res, filename) {
 }
 
 exports.print_url = function (req, res) {
+    if (!req.query.url || req.query.url === undefined) {
+        res.status(400).json({error: 'Unable to generate/save PDF!', message: 'No url submitted'});
+        return;
+    }
+
     console.log('Request for ' + req.query.url);
 
     getPdf(req.query.url).then(async (pdf) => {
@@ -107,7 +112,10 @@ exports.print_url = function (req, res) {
 exports.print_html = function (req, res) {
     if (!req.body.data || req.body.data === undefined) {
         res.status(400).json({error: 'Unable to generate/save PDF!', message: 'No data submitted'});
+        return;
     }
+
+    console.log('Request Content-Length: ' + (req.body.data.length/1024)+'kb');
 
     getPdf(req.body.data).then(async (pdf) => {
         const randomPrefixedTmpFile = uniqueFilename(options.dir);
