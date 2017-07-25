@@ -64,9 +64,9 @@ async function getPdf(html) {
 }
 
 function servePdf(res, filename) {
-    res.setHeader('Content-disposition', 'attachment; filename=' + filename);
+    res.setHeader('Content-disposition', 'attachment; filename=' + filename+'.pdf');
     res.setHeader('Content-type', 'application/pdf');
-    let stream = fs.createReadStream(options.dir + '/' + filename('.pdf', ''));
+    let stream = fs.createReadStream(options.dir + '/' + filename);
     stream.pipe(res);
 }
 
@@ -89,7 +89,7 @@ exports.print_url = function (req, res) {
             return;
         }
 
-        servePdf(res, path.basename(randomPrefixedTmpFile) + '.pdf');
+        servePdf(res, path.basename(randomPrefixedTmpFile));
     }).catch((error) => {
         res.status(400).json({error: 'Unable to generate/save PDF!', message: error.message});
         console.log('Caught ' + error);
@@ -113,7 +113,7 @@ exports.print_html = function (req, res) {
             return;
         }
 
-        servePdf(res, path.basename(randomPrefixedTmpFile) + '.pdf');
+        servePdf(res, path.basename(randomPrefixedTmpFile));
     }).catch((error) => {
         res.status(400).json({error: 'Unable to generate/save PDF!', message: error.message});
         console.log('Caught ' + error);
