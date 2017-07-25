@@ -33,15 +33,15 @@ async function load(html) {
         await Promise.all([Network.enable(), Page.enable()]);
         return new Promise(async (resolve, reject) => {
             let failed = false;
+            const url = /^(https?|file|data):/i.test(html) ? html : `data:text/html,${html}`;
 
             Network.loadingFailed((params) => {
                 failed = true;
 
                 console.log('Load(html) Network.loadingFailed: "'+params.errorText+'"');
-                reject(new Error('Load(html) unable to load remote URL: ' + html));
+                reject(new Error('Load(html) unable to load remote URL: ' + url));
             });
 
-            const url = /^(https?|file|data):/i.test(html) ? html : `data:text/html,${html}`;
             Page.navigate({url});
             await Page.loadEventFired();
             if (!failed) {
@@ -72,7 +72,7 @@ async function getPdf(html) {
 }
 
 function servePdf(res, filename) {
-    res.setHeader('Content-disposition', 'attachment; filename=' + filename+'.pdf');
+    res.setHeader('Content-disposition', 'attachment; filename=' + filename +'.pdf');
     res.setHeader('Content-type', 'application/pdf');
     let stream = fs.createReadStream(options.dir + '/' + filename);
     stream.pipe(res);
@@ -105,8 +105,11 @@ exports.print_url = function (req, res) {
 };
 
 exports.print_html = function (req, res) {
+    if (!req.body.data || req.body.data === undefined) {
+        res.status(400).json({error: 'Unable to generate/save PDF!', message: 'No data submitted'});
+    }
 
-    getPdf(req.query.url).then(async (pdf) => {
+    getPdf(req.body.data).then(async (pdf) => {
         const randomPrefixedTmpFile = uniqueFilename(options.dir);
 
         await fs.writeFileSync(randomPrefixedTmpFile, Buffer.from(pdf.data, 'base64'), (error) => {
@@ -135,6 +138,6 @@ exports.get_pdf = function (req, res) {
         return;
     }
 
-    servePdf(res, req.query.file);
+    servePdf(res, req.query.file.replace('.pdf',''));
 };
 
