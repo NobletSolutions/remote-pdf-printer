@@ -42,11 +42,13 @@ async function load(html) {
 
         const url = /^(https?|file|data):/i.test(html) ? html : `data:text/html,${html}`;
         Page.navigate({url});
-        Page.loadEventFired(() => {
+        Page.loadEventFired(async () => {
             if (!failed) {
                 console.log('Load(html) resolved');
                 resolve({client: client, tab: tab});
+                return;
             }
+            await CDP.Close({port: options.port, id: tab.id});
         });
     });
 }
@@ -58,7 +60,7 @@ async function getPdf(html) {
     console.log("tabID: "+tab.id);
     // https://chromedevtools.github.io/debugger-protocol-viewer/tot/Page/#method-printToPDF
     const pdf = await Page.printToPDF(options.printOptions);
-    client.close();
+    await CDP.Close({port: options.port, id: tab.id});
 
     return pdf;
 }
