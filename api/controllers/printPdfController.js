@@ -45,16 +45,17 @@ async function load(html) {
         Page.loadEventFired(() => {
             if (!failed) {
                 console.log('Load(html) resolved');
-                resolve(client);
+                resolve({client: client, tab: tab});
             }
         });
     });
 }
 
 async function getPdf(html) {
-    const client = await load(html);
+    const {client, tab} = await load(html);
     const {Page} = client;
 
+    console.log("tabID: "+tab.id);
     // https://chromedevtools.github.io/debugger-protocol-viewer/tot/Page/#method-printToPDF
     const pdf = await Page.printToPDF(options.printOptions);
     client.close();
