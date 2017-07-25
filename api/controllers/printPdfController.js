@@ -33,8 +33,8 @@ async function load(html) {
         await Promise.all([Network.enable(), Page.enable()]);
     } catch (error) {
         console.log('Load(html) error: ' + error);
-    } finally {
         if (tab) {
+            console.log('Load(html) closing open tab');
             CDP.Close({port: options.port, id: tab.id});
         }
     }
@@ -65,7 +65,6 @@ async function getPdf(html) {
     const {client, tab} = await load(html);
     const {Page} = client;
 
-    console.log("tabID: "+tab.id);
     // https://chromedevtools.github.io/debugger-protocol-viewer/tot/Page/#method-printToPDF
     const pdf = await Page.printToPDF(options.printOptions);
     await CDP.Close({port: options.port, id: tab.id});
