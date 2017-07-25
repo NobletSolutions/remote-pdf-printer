@@ -3,7 +3,7 @@
  */
 'use strict';
 module.exports = function(app) {
-    var pdfPrinter = require('../controllers/printPdfController');
+    const pdfPrinter = require('../controllers/printPdfController');
 
     // todoList Routes
     app.route('/pdf/url')

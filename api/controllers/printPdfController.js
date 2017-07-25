@@ -8,70 +8,124 @@
 'use strict';
 
 const uniqueFilename = require('unique-filename');
-const htmlPdf = require('html-pdf-chrome');
 const path = require('path');
 const fs = require('fs');
+const CDP = require('chrome-remote-interface');
+
 const options = {
-    htmlPDF: {
-        port: process.env.CHROME_PORT || 1337,
-        printOptions: {
-            marginTop: 0,
-            marginRight: 0,
-            marginLeft:0,
-            printBackground: true,
-        }
+    port: process.env.CHROME_PORT || 1337,
+    printOptions: {
+        marginTop: 0,
+        marginRight: 0,
+        marginLeft: 0,
+        printBackground: true,
     },
-    dir: process.env.DIR || __dirname+'/../../files/'
+    dir: process.env.DIR || __dirname + '/../../files/'
 };
 
-exports.print_url = function(req, res) {
-    var randomPrefixedTmpfile = uniqueFilename(options.dir);
-    htmlPdf.create(req.query.url, options.htmlPDF).then((pdf) => {
-        pdf.toFile(randomPrefixedTmpfile)
-        if(!req.query.download || req.query.download == false) {
-            res.json({url: req.query.url, pdf: path.basename(randomPrefixedTmpfile)+'.pdf'});
-            return;
-        }
+async function load(html) {
+    console.log('Load(html) called');
 
-        res.setHeader('Content-disposition', 'attachment; filename='+path.basename(randomPrefixedTmpfile)+'.pdf');
-        res.setHeader('Content-type', 'application/pdf');
-        var filestream = fs.createReadStream(randomPrefixedTmpfile);
-        filestream.pipe(res);
-    }).catch((reason) => {
-        res.status(400).json({error: 'Unable to generate PDF'});
-        return;
+    const tab = await CDP.New({port: options.port});
+    const client = await CDP({tab});
+    const {Network, Page} = client;
+    await Promise.all([Network.enable(), Page.enable()]);
+
+    return new Promise((resolve, reject) => {
+        let failed = false;
+
+        Network.loadingFailed(() => {
+            failed = true;
+            console.log('Load(html) Network.loadingFailed');
+            reject(new Error('Load(html) unable to load remote URL: ' + html));
+        });
+
+        const url = /^(https?|file|data):/i.test(html) ? html : `data:text/html,${html}`;
+        Page.navigate({url});
+        Page.loadEventFired(() => {
+            if (!failed) {
+                console.log('Load(html) resolved');
+                resolve(client);
+            }
+        });
     });
-};
+}
 
-exports.print_html = function(req, res) {
-    var randomPrefixedTmpfile = uniqueFilename(options.dir);
-    htmlPdf.create(req.body.data, options.htmlPDF).then((pdf) => {
-        pdf.toFile(randomPrefixedTmpfile)
-        if(!req.body.download || req.body.download == false) {
-            res.json({length: req.body.data.length, pdf: path.basename(randomPrefixedTmpfile)+'.pdf'});
+async function getPdf(html) {
+    const client = await load(html);
+    const {Page} = client;
+
+    // https://chromedevtools.github.io/debugger-protocol-viewer/tot/Page/#method-printToPDF
+    const pdf = await Page.printToPDF(options.printOptions);
+    client.close();
+
+    return pdf;
+}
+
+function servePdf(res, filename) {
+    res.setHeader('Content-disposition', 'attachment; filename=' + filename);
+    res.setHeader('Content-type', 'application/pdf');
+    let stream = fs.createReadStream(options.dir + '/' + filename('.pdf', ''));
+    stream.pipe(res);
+}
+
+exports.print_url = function (req, res) {
+    console.log('Request for ' + req.query.url);
+
+    getPdf(req.query.url).then(async (pdf) => {
+        const randomPrefixedTmpFile = uniqueFilename(options.dir);
+
+        await fs.writeFileSync(randomPrefixedTmpFile, Buffer.from(pdf.data, 'base64'), (error) => {
+            if (error) {
+                throw error;
+            }
+        });
+
+        console.log('wrote file ' + randomPrefixedTmpFile + ' successfully');
+
+        if (!req.query.download || req.query.download === false) {
+            res.json({url: req.query.url, pdf: path.basename(randomPrefixedTmpFile) + '.pdf'});
             return;
         }
 
-        res.setHeader('Content-disposition', 'attachment; filename='+path.basename(randomPrefixedTmpfile)+'.pdf');
-        res.setHeader('Content-type', 'application/pdf');
-        var filestream = fs.createReadStream(randomPrefixedTmpfile);
-        filestream.pipe(res);
+        servePdf(res, path.basename(randomPrefixedTmpFile) + '.pdf');
     }).catch((error) => {
-        res.status(400).json({error: 'Unable to generate PDF'});
-        return;
+        res.status(400).json({error: 'Unable to generate/save PDF!', message: error.message});
+        console.log('Caught ' + error);
     });
 };
 
-exports.get_pdf = function(req,res) {
+exports.print_html = function (req, res) {
+
+    getPdf(req.query.url).then(async (pdf) => {
+        const randomPrefixedTmpFile = uniqueFilename(options.dir);
+
+        await fs.writeFileSync(randomPrefixedTmpFile, Buffer.from(pdf.data, 'base64'), (error) => {
+            if (error) {
+                throw error;
+            }
+        });
+
+        console.log('wrote file ' + randomPrefixedTmpFile + ' successfully');
+        if (!req.body.download || req.body.download === false) {
+            res.json({length: req.body.data.length, pdf: path.basename(randomPrefixedTmpFile) + '.pdf'});
+            return;
+        }
+
+        servePdf(res, path.basename(randomPrefixedTmpFile) + '.pdf');
+    }).catch((error) => {
+        res.status(400).json({error: 'Unable to generate/save PDF!', message: error.message});
+        console.log('Caught ' + error);
+    });
+};
+
+exports.get_pdf = function (req, res) {
     // Ensure no one tries a directory traversal
-    if(req.query.file.indexOf('..') !== -1 || req.query.file.indexOf('.pdf') == -1) {
+    if (req.query.file.indexOf('..') !== -1 || req.query.file.indexOf('.pdf') === -1) {
         res.status(400).send('Invalid filename!');
         return;
     }
 
-    res.setHeader('Content-disposition', 'attachment; filename='+req.query.file);
-    res.setHeader('Content-type', 'application/pdf');
-    var filestream = fs.createReadStream(options.dir+'/'+req.query.file.replace('.pdf',''));
-    filestream.pipe(res);
+    servePdf(res, req.query.file);
 };
 

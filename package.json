@@ -14,14 +14,14 @@
   "license": "MIT",
   "dependencies": {
     "body-parser": "^1.17.2",
+    "chrome-remote-interface": "^0.24.2",
     "express": "^4.15.3",
-    "html-pdf-chrome": "^0.2.0",
     "morgan": "^1.8.2",
     "unique-filename": "^1.1.0"
   },
   "files": [
-	  "server.js",
-	  "api",
-	  "package.json"
+    "server.js",
+    "api",
+    "package.json"
   ]
 }
