@@ -25,11 +25,19 @@ const options = {
 
 async function load(html) {
     console.log('Load(html) called');
-
-    const tab = await CDP.New({port: options.port});
-    const client = await CDP({tab});
-    const {Network, Page} = client;
-    await Promise.all([Network.enable(), Page.enable()]);
+    let tab = undefined;
+    try {
+        tab = await CDP.New({port: options.port});
+        const client = await CDP({tab});
+        const {Network, Page} = client;
+        await Promise.all([Network.enable(), Page.enable()]);
+    } catch (error) {
+        console.log('Load(html) error: ' + error);
+    } finally {
+        if (tab) {
+            CDP.Close({port: options.port, id: tab.id});
+        }
+    }
 
     return new Promise((resolve, reject) => {
         let failed = false;
