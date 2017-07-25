@@ -31,25 +31,25 @@ async function load(html) {
         const client = await CDP({tab});
         const {Network, Page} = client;
         await Promise.all([Network.enable(), Page.enable()]);
-        return new Promise((resolve, reject) => {
+        return new Promise(async (resolve, reject) => {
             let failed = false;
 
-            Network.loadingFailed(() => {
+            Network.loadingFailed((params) => {
                 failed = true;
-                console.log('Load(html) Network.loadingFailed');
+
+                console.log('Load(html) Network.loadingFailed: "'+params.errorText+'"');
                 reject(new Error('Load(html) unable to load remote URL: ' + html));
             });
 
             const url = /^(https?|file|data):/i.test(html) ? html : `data:text/html,${html}`;
             Page.navigate({url});
-            Page.loadEventFired(async () => {
-                if (!failed) {
-                    console.log('Load(html) resolved');
-                    resolve({client: client, tab: tab});
-                    return;
-                }
-                await CDP.Close({port: options.port, id: tab.id});
-            });
+            await Page.loadEventFired();
+            if (!failed) {
+                console.log('Load(html) resolved');
+                resolve({client: client, tab: tab});
+                return;
+            }
+            await CDP.Close({port: options.port, id: tab.id});
         });
     } catch (error) {
         console.log('Load(html) error: ' + error);
