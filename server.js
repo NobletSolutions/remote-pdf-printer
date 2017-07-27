@@ -2,6 +2,7 @@ const express = require('express');
 const fs = require('fs');
 const https = require('https');
 const logger = require('morgan');
+const helmet = require('helmet');
 app = express();
 
 const options = {
@@ -14,7 +15,7 @@ const options = {
 };
 
 bodyParser = require('body-parser');
-
+app.use(helmet({hsts: options.use_ssl}));
 app.use(logger('combined',{stream: fs.createWriteStream('/var/log/remote-pdf-printer.log')}));
 app.use(bodyParser.urlencoded({limit: '10mb', extended: true }));
 const routes = require('./api/routes/printPdfRoutes');

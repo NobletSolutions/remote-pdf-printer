@@ -16,12 +16,14 @@
     "body-parser": "^1.17.2",
     "chrome-remote-interface": "^0.24.2",
     "express": "^4.15.3",
+    "helmet": "^3.8.0",
     "morgan": "^1.8.2",
     "unique-filename": "^1.1.0"
   },
   "files": [
     "server.js",
     "api",
-    "package.json"
+    "package.json",
+    "package-lock.json"
   ]
 }
