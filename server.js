@@ -9,7 +9,8 @@ const options = {
 	address: process.env.LISTEN || '127.0.0.1',
 	use_ssl: process.env.USE_SSL || true,
 	keyPath: process.env.SSL_KEY || 'privkey.pem',
-	certPath: process.env.SSL_CERT || 'cert.pem'
+	certPath: process.env.SSL_CERT || 'cert.pem',
+    caPath: process.env.SSL_CA || 'chain.pem',
 };
 
 bodyParser = require('body-parser');
@@ -23,7 +24,8 @@ if(options.use_ssl === true) {
     console.log('USING SSL! KEY: '+options.keyPath+"\nCert: "+options.certPath+"\nPort: "+options.port);
     https.createServer({
         key: fs.readFileSync(options.keyPath),
-        cert: fs.readFileSync(options.certPath)
+        cert: fs.readFileSync(options.certPath),
+        ca: [ fs.readFileSync(options.caPath)]
     },app).listen(options.port,options.address);
 } else {
     console.log("**NOT** USING SSL! \nPort: "+options.port);
