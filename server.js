@@ -3,6 +3,7 @@ const fs = require('fs');
 const https = require('https');
 const logger = require('morgan');
 const helmet = require('helmet');
+const constants = require('constants');
 app = express();
 
 const options = {
@@ -24,6 +25,7 @@ routes(app);
 if(options.use_ssl === true) {
     console.log('USING SSL! KEY: '+options.keyPath+"\nCert: "+options.certPath+"\nPort: "+options.port);
     https.createServer({
+        secureOptions: constants.SSL_OP_NO_TLSv1|constants.SSL_OP_NO_SSLv2|constants.SSL_OP_NO_SSLv3,
         key: fs.readFileSync(options.keyPath),
         cert: fs.readFileSync(options.certPath),
         ca: [ fs.readFileSync(options.caPath)]
