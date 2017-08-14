@@ -15,10 +15,7 @@ const CDP = require('chrome-remote-interface');
 const options = {
     port: process.env.CHROME_PORT || 1337,
     printOptions: {
-        marginTop: 0,
-        marginRight: 0,
-        marginLeft: 0,
-        printBackground: true,
+        printBackground: true
     },
     dir: process.env.DIR || __dirname + '/../../files/'
 };
