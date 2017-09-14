@@ -39,9 +39,18 @@ async function load(html) {
                 reject(new Error('Load(html) unable to load remote URL: ' + url));
             });
 
+            Network.requestWillBeSent((params) => {
+               console.log('Load(html) Request ('+params.requestId+') will be sent: '+params.request.url);
+            });
+
+            Network.responseReceived((params) => {
+              console.log('Load(html) Response Received: ('+params.requestId+') Status: '+params.response.status);
+            });
+
             Page.navigate({url});
             await Page.loadEventFired();
             if (!failed) {
+                await delay(500);
                 console.log('Load(html) resolved');
                 resolve({client: client, tab: tab});
                 return;
