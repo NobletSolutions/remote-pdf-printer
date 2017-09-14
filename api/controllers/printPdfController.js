@@ -29,33 +29,57 @@ async function load(html) {
         const {Network, Page} = client;
         await Promise.all([Network.enable(), Page.enable()]);
         return new Promise(async (resolve, reject) => {
+            function complete(options)
+            {
+                console.log('Load(html) *actually* resolved');
+                resolve(options);
+            }
+
+            let resolveOptions = {client: client, tab: tab};
             let failed = false;
+            let completed = false;
+            let postResolvedRequests = [];
             const url = /^(https?|file|data):/i.test(html) ? html : `data:text/html,${html}`;
 
             Network.loadingFailed((params) => {
                 failed = true;
 
                 console.log('Load(html) Network.loadingFailed: "'+params.errorText+'"');
-                reject(new Error('Load(html) unable to load remote URL: ' + url));
+                reject(new Error('Load(html) unable to load remote URL'));
             });
 
             Network.requestWillBeSent((params) => {
-               console.log('Load(html) Request ('+params.requestId+') will be sent: '+params.request.url);
+                if (completed === true) {
+                    postResolvedRequests[params.requestId] = 1;
+                }
+
+                console.log('Load(html) Request ('+params.requestId+') will be sent: '+params.request.url);
             });
 
             Network.responseReceived((params) => {
-              console.log('Load(html) Response Received: ('+params.requestId+') Status: '+params.response.status);
+                console.log('Load(html) Response Received: ('+params.requestId+') Status: '+params.response.status);
+
+                if (completed === true) {
+                    delete postResolvedRequests[params.requestId];
+                    if (postResolvedRequests.length === 0) {
+                        clearTimeout(waitForResponse);
+                        complete(resolveOptions);
+                    }
+                }
             });
 
             Page.navigate({url});
             await Page.loadEventFired();
-            if (!failed) {
-                await delay(500);
-                console.log('Load(html) resolved');
-                resolve({client: client, tab: tab});
-                return;
+            console.log('Load(html) resolved');
+
+            let waitForResponse = false;
+
+            if (failed) {
+                await CDP.Close({port: options.port, id: tab.id});
             }
-            await CDP.Close({port: options.port, id: tab.id});
+
+            completed = true;
+            waitForResponse = setTimeout(complete, 750, resolveOptions);
         });
     } catch (error) {
         console.log('Load(html) error: ' + error);
@@ -154,4 +178,3 @@ exports.get_pdf = function (req, res) {
 
     servePdf(res, req.query.file.replace('.pdf',''));
 };
-
