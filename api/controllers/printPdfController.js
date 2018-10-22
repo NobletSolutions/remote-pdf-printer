@@ -12,6 +12,57 @@ const path = require('path');
 const fs = require('fs');
 const CDP = require('chrome-remote-interface');
 
+let headerFooterStyle = `<style type="text/css" media="print">
+		/* Do not edit below this line */
+		@page
+		{
+		    margin: 0;
+		    padding: 0;
+		}
+
+		html {
+		    margin: 0;
+		    padding: 0;
+		    overflow: hidden;
+		}
+
+		body {
+		    margin: 0;
+		    padding: 0;
+		    height: 100%;
+		    overflow: hidden;
+		}
+
+		* {
+		    -webkit-print-color-adjust: exact;
+		    box-sizing: border-box;
+		}
+
+        header {
+		    position: relative;
+		    top: -0.16in; /* Do not change this */
+		    height: 1.5in; /* Must match marginTop minus header padding */
+		    background-size: cover;
+		    font-size: 11pt;
+		    overflow: hidden;
+		    padding: 0.25in;
+		    margin: 0;
+		    width: 100%;
+		}
+
+		footer {
+            position: relative;
+            bottom: -0.16in; /* Do not change this */
+            height: 0.75in; /* Must match marginBottom minus footer padding */
+            background-size: cover;
+            font-size: 11pt;
+            overflow: hidden;
+            padding: 0.125in;
+            margin: 0;
+            width: 100%;
+        }
+</style>`;
+
 const options = {
     port: process.env.CHROME_PORT || 1337,
     printOptions: {
@@ -116,6 +167,32 @@ exports.print_url = function (req, res) {
 
     console.log('Request for ' + req.query.url);
 
+    if (req.body && req.body.header) {
+        if (!req.body.marginTop) {
+            res.status(400).json({
+                error: 'Unable to generate/save PDF!',
+                message: 'When providing a header template the marginTop is required'
+            });
+        }
+
+        options.printOptions.displayHeaderFooter = true;
+        options.printOptions.headerTemplate = headerFooterStyle + req.body.header;
+        options.printOptions.marginTop = req.body.marginTop;
+    }
+
+    if (req.body && req.body.footer) {
+        if (!req.body.marginBottom) {
+            res.status(400).json({
+                error: 'Unable to generate/save PDF!',
+                message: 'When providing a footer template the marginBottom is required'
+            });
+        }
+
+        options.printOptions.displayHeaderFooter = true;
+        options.printOptions.headerTemplate = headerFooterStyle + req.body.footer;
+        options.printOptions.marginBottom = req.body.marginBottom;
+    }
+
     getPdf(req.query.url).then(async (pdf) => {
         const randomPrefixedTmpFile = uniqueFilename(options.dir);
 
@@ -146,6 +223,39 @@ exports.print_html = function (req, res) {
     }
 
     console.log('Request Content-Length: ' + (req.body.data.length/1024)+'kb');
+
+    const randomPrefixedHtmlFile = uniqueFilename(options.dir);
+    fs.writeFile(randomPrefixedHtmlFile, req.body.data, (error) => {
+        if (error) {
+            throw error;
+        }
+    });
+
+    if (req.body.header) {
+        if (!req.body.marginTop) {
+            res.status(400).json({
+                error: 'Unable to generate/save PDF!',
+                message: 'When providing a header template the marginTop is required'
+            });
+        }
+
+        options.printOptions.displayHeaderFooter = true;
+        options.printOptions.headerTemplate = headerFooterStyle + req.body.header;
+        options.printOptions.marginTop = req.body.marginTop;
+    }
+
+    if (req.body.footer) {
+        if (!req.body.marginBottom) {
+            res.status(400).json({
+                error: 'Unable to generate/save PDF!',
+                message: 'When providing a footer template the marginBottom is required'
+            });
+        }
+
+        options.printOptions.displayHeaderFooter = true;
+        options.printOptions.headerTemplate = headerFooterStyle + req.body.footer;
+        options.printOptions.marginBottom = req.body.marginBottom;
+    }
 
     getPdf(req.body.data).then(async (pdf) => {
         const randomPrefixedTmpFile = uniqueFilename(options.dir);
