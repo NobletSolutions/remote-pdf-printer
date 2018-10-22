@@ -68,6 +68,7 @@ const options = {
     printOptions: {
         printBackground: true
     },
+    debug: process.env.DEBUG || false,
     dir: process.env.DIR || __dirname + '/../../files/'
 };
 
@@ -224,12 +225,14 @@ exports.print_html = function (req, res) {
 
     console.log('Request Content-Length: ' + (req.body.data.length/1024)+'kb');
 
-    const randomPrefixedHtmlFile = uniqueFilename(options.dir);
-    fs.writeFile(randomPrefixedHtmlFile, req.body.data, (error) => {
-        if (error) {
-            throw error;
-        }
-    });
+    if (options.debug) {
+        const randomPrefixedHtmlFile = uniqueFilename(options.dir);
+        fs.writeFile(randomPrefixedHtmlFile, req.body.data, (error) => {
+            if (error) {
+                throw error;
+            }
+        });
+    }
 
     if (req.body.header) {
         if (!req.body.marginTop) {
