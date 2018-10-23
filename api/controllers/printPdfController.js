@@ -74,10 +74,11 @@ const options = {
 
 async function load(html) {
     console.log('Load(html) called');
-    let tab = undefined;
+    let target = undefined;
     try {
-        tab = await CDP.New({port: options.port});
-        const client = await CDP({tab});
+        console.log('Load using ports ' + options.port);
+        target = await CDP.New({port: options.port});
+        const client = await CDP({target});
         const {Network, Page} = client;
         await Promise.all([Network.enable(), Page.enable()]);
         return new Promise(async (resolve, reject) => {
@@ -87,7 +88,7 @@ async function load(html) {
                 resolve(options);
             }
 
-            let resolveOptions = {client: client, tab: tab};
+            let resolveOptions = {client: client, target: target};
             let failed = false;
             let completed = false;
             let postResolvedRequests = [];
@@ -127,7 +128,7 @@ async function load(html) {
             let waitForResponse = false;
 
             if (failed) {
-                await CDP.Close({port: options.port, id: tab.id});
+                await CDP.Close({port: options.port, id: target.id});
             }
 
             completed = true;
@@ -135,20 +136,20 @@ async function load(html) {
         });
     } catch (error) {
         console.log('Load(html) error: ' + error);
-        if (tab) {
-            console.log('Load(html) closing open tab');
-            CDP.Close({port: options.port, id: tab.id});
+        if (target) {
+            console.log('Load(html) closing open target');
+            CDP.Close({port: options.port, id: target.id});
         }
     }
 }
 
 async function getPdf(html) {
-    const {client, tab} = await load(html);
+    const {client, target} = await load(html);
     const {Page} = client;
 
     // https://chromedevtools.github.io/debugger-protocol-viewer/tot/Page/#method-printToPDF
     const pdf = await Page.printToPDF(options.printOptions);
-    await CDP.Close({port: options.port, id: tab.id});
+    await CDP.Close({port: options.port, id: target.id});
 
     return pdf;
 }
@@ -178,7 +179,7 @@ exports.print_url = function (req, res) {
 
         options.printOptions.displayHeaderFooter = true;
         options.printOptions.headerTemplate = headerFooterStyle + req.body.header;
-        options.printOptions.marginTop = req.body.marginTop;
+        options.printOptions.marginTop = parseFloat(req.body.marginTop);
     }
 
     if (req.body && req.body.footer) {
@@ -191,7 +192,7 @@ exports.print_url = function (req, res) {
 
         options.printOptions.displayHeaderFooter = true;
         options.printOptions.headerTemplate = headerFooterStyle + req.body.footer;
-        options.printOptions.marginBottom = req.body.marginBottom;
+        options.printOptions.marginBottom = parseFloat(req.body.marginBottom);
     }
 
     getPdf(req.query.url).then(async (pdf) => {
@@ -244,7 +245,7 @@ exports.print_html = function (req, res) {
 
         options.printOptions.displayHeaderFooter = true;
         options.printOptions.headerTemplate = headerFooterStyle + req.body.header;
-        options.printOptions.marginTop = req.body.marginTop;
+        options.printOptions.marginTop = parseFloat(req.body.marginTop);
     }
 
     if (req.body.footer) {
@@ -257,7 +258,7 @@ exports.print_html = function (req, res) {
 
         options.printOptions.displayHeaderFooter = true;
         options.printOptions.headerTemplate = headerFooterStyle + req.body.footer;
-        options.printOptions.marginBottom = req.body.marginBottom;
+        options.printOptions.marginBottom = parseFloat(req.body.marginBottom);
     }
 
     getPdf(req.body.data).then(async (pdf) => {
