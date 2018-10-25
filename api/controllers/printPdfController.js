@@ -42,23 +42,14 @@ let headerFooterStyle = `<style type="text/css" media="print">
 		    position: relative;
 		    top: -0.16in; /* Do not change this */
 		    height: 1.5in; /* Must match marginTop minus header padding */
-		    background-size: cover;
 		    font-size: 11pt;
-		    overflow: hidden;
-		    padding: 0.25in;
-		    margin: 0;
 		    width: 100%;
 		}
 
 		footer {
             position: relative;
             bottom: -0.16in; /* Do not change this */
-            height: 0.75in; /* Must match marginBottom minus footer padding */
-            background-size: cover;
-            font-size: 11pt;
-            overflow: hidden;
-            padding: 0.125in;
-            margin: 0;
+            font-size: 10pt;
             width: 100%;
         }
 </style>`;
@@ -173,7 +164,9 @@ function getPrintOptions(body) {
         printOptions.displayHeaderFooter = true;
         printOptions.headerTemplate = headerFooterStyle + body.header;
         printOptions.footerTemplate = '<footer></footer>';
-        printOptions.marginTop = parseFloat(body.marginTop);
+        printOptions.marginTop = parseFloat(body.marginTop) + 0.35; //accounts for the odd -0.16in margins
+    } else if (options.debug) {
+        console.log('No Header');
     }
 
     if (body && body.footer) {
@@ -189,7 +182,14 @@ function getPrintOptions(body) {
         if (!printOptions.headerTemplate) {
             printOptions.headerTemplate = '<header></header>';
         }
-        printOptions.marginBottom = parseFloat(body.marginBottom);
+
+        printOptions.marginBottom = parseFloat(body.marginBottom) + 0.35; //accounts for the odd -0.16in margins;
+    } else if (options.debug) {
+        console.log('No Footer');
+    }
+
+    if (options.debug) {
+        console.log('Keys ' + Object.keys(body));
     }
 
     return printOptions;
@@ -203,7 +203,7 @@ exports.print_url = function (req, res) {
 
     console.log('Request for ' + req.query.url);
 
-    let printOptions = getPrintOptions(res.body);
+    let printOptions = getPrintOptions(req.body);
 
     getPdf(req.query.url, printOptions).then(async (pdf) => {
         const randomPrefixedTmpFile = uniqueFilename(options.dir);
@@ -243,9 +243,11 @@ exports.print_html = function (req, res) {
                 throw error;
             }
         });
+
+        console.log('wrote HTML file ' + randomPrefixedHtmlFile + ' successfully');
     }
 
-    let printOptions = getPrintOptions(res.body);
+    let printOptions = getPrintOptions(req.body);
 
     getPdf(req.body.data, printOptions).then(async (pdf) => {
         const randomPrefixedTmpFile = uniqueFilename(options.dir);
