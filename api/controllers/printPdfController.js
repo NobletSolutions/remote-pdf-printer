@@ -153,6 +153,10 @@ function getPrintOptions(body) {
         printBackground: true
     };
 
+    if (options.debug) {
+        console.log('Keys ' + Object.keys(body));
+    }
+
     if (body && body.header) {
         if (!body.marginTop) {
             res.status(400).json({
@@ -161,10 +165,21 @@ function getPrintOptions(body) {
             });
         }
 
+        if (options.debug) {
+            console.log('Have Header');
+        }
+
         printOptions.displayHeaderFooter = true;
         printOptions.headerTemplate = headerFooterStyle + body.header;
         printOptions.footerTemplate = '<footer></footer>';
-        printOptions.marginTop = parseFloat(body.marginTop) + 0.35; //accounts for the odd -0.16in margins
+
+        let requestedMargin = parseFloat(body.marginTop);
+        let adjustment = 0.35;
+        if (requestedMargin - 1 > 0) {
+            adjustment += 0.35 * (requestedMargin - 1);
+        }
+
+        printOptions.marginTop = requestedMargin + adjustment; //accounts for the odd -0.16in margins
     } else if (options.debug) {
         console.log('No Header');
     }
@@ -177,19 +192,26 @@ function getPrintOptions(body) {
             });
         }
 
+        if (options.debug) {
+            console.log('Have Footer');
+        }
+
         printOptions.displayHeaderFooter = true;
         printOptions.footerTemplate = headerFooterStyle + body.footer;
         if (!printOptions.headerTemplate) {
             printOptions.headerTemplate = '<header></header>';
         }
 
-        printOptions.marginBottom = parseFloat(body.marginBottom) + 0.35; //accounts for the odd -0.16in margins;
+        let requestedMargin = parseFloat(body.marginBottom);
+        let adjustment = 0.35;
+        if (requestedMargin - 1 > 0) {
+            adjustment += 0.35 * (requestedMargin - 1);
+        }
+
+        printOptions.marginBottom = requestedMargin + adjustment;
+
     } else if (options.debug) {
         console.log('No Footer');
-    }
-
-    if (options.debug) {
-        console.log('Keys ' + Object.keys(body));
     }
 
     return printOptions;
