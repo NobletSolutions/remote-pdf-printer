@@ -3,7 +3,7 @@
 %global user      pdf
 
 Name:		remote-pdf-printer
-Version:	1.1.13
+Version:	1.1.14
 Release:	1%{?dist}
 Summary:	Server that accepts HTML/URLs and converts to PDFs
 
