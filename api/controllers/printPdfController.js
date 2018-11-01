@@ -214,6 +214,14 @@ function getPrintOptions(body) {
         console.log('No Footer');
     }
 
+    if (body && body.marginLeft) {
+	printOptions.marginLeft = parseFloat(body.marginLeft);
+    }
+
+    if (body && body.marginRight) {
+        printOptions.marginRight = parseFloat(body.marginRight);
+    }
+
     return printOptions;
 }
 
