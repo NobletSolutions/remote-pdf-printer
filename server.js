@@ -13,14 +13,17 @@ const options = {
 	keyPath: process.env.SSL_KEY || 'privkey.pem',
 	certPath: process.env.SSL_CERT || 'cert.pem',
     caPath: process.env.SSL_CA || 'chain.pem',
+    logPath: process.env.LOG_PATH || '/var/log',
 };
 
 bodyParser = require('body-parser');
 app.use(helmet({hsts: options.use_ssl}));
-app.use(logger('combined',{stream: fs.createWriteStream('/var/log/remote-pdf-printer.log')}));
+app.use(logger('combined',{stream: fs.createWriteStream(options.logPath+'/remote-pdf-printer.log')}));
 app.use(bodyParser.urlencoded({limit: '10mb', extended: true }));
-const routes = require('./api/routes/printPdfRoutes');
-routes(app);
+const pdfRoutes = require('./api/routes/printPdfRoutes');
+const pngRoutes = require('./api/routes/printPngRoutes');
+pdfRoutes(app);
+pngRoutes(app);
 
 if(options.use_ssl === true) {
     console.log('USING SSL! KEY: '+options.keyPath+"\nCert: "+options.certPath+"\nPort: "+options.port);
