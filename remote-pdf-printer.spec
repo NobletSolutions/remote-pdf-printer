@@ -45,10 +45,13 @@ exit 0
 %{__install} -Dp -m0644 %{SOURCE2} $RPM_BUILD_ROOT%{_sysconfdir}/sysconfig/remote-pdf-printer
 %{__install} -Dp -m0640 server.js $RPM_BUILD_ROOT%{homedir}/server.js
 %{__install} -Dp -m0440 package.json $RPM_BUILD_ROOT%{homedir}/package.json
-%{__install} -Dp -m0440 api/controllers/printPdfController.js $RPM_BUILD_ROOT%{homedir}/api/controllers/printPdfController.js
-%{__install} -Dp -m0440 api/routes/printPdfRoutes.js $RPM_BUILD_ROOT%{homedir}/api/routes/printPdfRoutes.js
-%{__install} -d -p $RPM_BUILD_ROOT%{homedir}/node_modules
-%{__install} -d -p $RPM_BUILD_ROOT%{homedir}/files
+%{__install} -dp $RPM_BUILD_ROOT%{homedir}/node_modules
+%{__install} -dp $RPM_BUILD_ROOT%{homedir}/files
+%{__install} -dp $RPM_BUILD_ROOT%{homedir}/api/controllers
+%{__install} -dp $RPM_BUILD_ROOT%{homedir}/api/routes
+
+%{__install} -Dp -m0440 api/controllers/*js $RPM_BUILD_ROOT%{homedir}/api/controllers/
+%{__install} -Dp -m0440 api/routes/*.js $RPM_BUILD_ROOT%{homedir}/api/routes/
 
 %files
 %doc
@@ -59,8 +62,8 @@ exit 0
 %attr(0770,%{user},%{user}) %dir %{homedir}/files
 %{homedir}/server.js
 %attr(0440,%{user},%{user}) %{homedir}/package.json
-%{homedir}/api/controllers/printPdfController.js
-%{homedir}/api/routes/printPdfRoutes.js
+%{homedir}/api/controllers/*.js
+%{homedir}/api/routes/*.js
 
 %changelog
 * Fri Dec 14 2018 Nathanael Noblet <nathanael@gnat.ca> - 2.0.0-1
