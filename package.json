@@ -17,8 +17,9 @@
     "chrome-remote-interface": "^0.26.1",
     "constants": "0.0.2",
     "express": "^4.16.4",
-    "helmet": "^3.14.0",
+    "helmet": "^3.15.0",
     "morgan": "^1.9.1",
+    "pdf-poppler": "git+https://github.com/NobletSolutions/pdf-poppler.git#linux",
     "unique-filename": "^1.1.1"
   },
   "files": [

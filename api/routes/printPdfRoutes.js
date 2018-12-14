@@ -5,13 +5,15 @@
 module.exports = function(app) {
     const pdfPrinter = require('../controllers/printPdfController');
 
-    // todoList Routes
-    app.route('/pdf/url')
-        .get(pdfPrinter.print_url);
+    app.route('/pdf')
+        .post(pdfPrinter.print);
 
-    app.route('/pdf/html')
-        .post(pdfPrinter.print_html);
+    app.route('/pdf/preview')
+        .post(pdfPrinter.preview);
 
-    app.route('/pdf/get')
+    app.route('/pdf/:file')
         .get(pdfPrinter.get_pdf);
+
+    app.route('/pdf/preview/:file')
+        .get(pdfPrinter.get_preview);
 };
