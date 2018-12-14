@@ -159,10 +159,28 @@ async function getPdf(html, printOptions) {
     return pdf;
 }
 
+function isFile(fullpath) {
+    try {
+        return fs.statSync(fullpath).isFile()
+    } catch (e) {
+        return false
+    }
+}
+
 function servePdf(res, filename) {
+    let fullpath = options.dir + '/' + filename;
+    if (options.debug) {
+        console.log('Requesting Filename: '+fullpath);
+    }
+
+    if (!isFile(fullpath)) {
+        res.status(404).send('No such file');
+        return;
+    }
+
     res.setHeader('Content-disposition', 'attachment; filename=' + filename + '.pdf');
     res.setHeader('Content-type', 'application/pdf');
-    let stream = fs.createReadStream(options.dir + '/' + filename);
+    let stream = fs.createReadStream(fullpath);
     stream.pipe(res);
 }
 
@@ -244,9 +262,19 @@ function getPrintOptions(body, res) {
 }
 
 function servePreview(res, filename) {
+    let fullpath = options.dir + '/previews/' + filename;
+    if (options.debug) {
+        console.log('Requesting Filename: '+fullpath);
+    }
+
+    if (!isFile(fullpath)) {
+        res.status(404).send('No such file');
+        return;
+    }
+
     res.setHeader('Content-disposition', 'attachment; filename=' + filename);
     res.setHeader('Content-type', 'image/jpeg');
-    let stream = fs.createReadStream(options.dir + '/previews/' + filename);
+    let stream = fs.createReadStream(fullpath);
     stream.pipe(res);
 }
 

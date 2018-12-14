@@ -116,10 +116,28 @@ async function getPng(html, printOptions) {
     return png;
 }
 
+function isFile(fullpath) {
+    try {
+        return fs.statSync(fullpath).isFile()
+    } catch (e) {
+        return false
+    }
+}
+
 function servePng(res, filename) {
+    let fullpath = options.dir + '/' + filename;
+    if (options.debug) {
+        console.log('Requesting Filename: '+fullpath);
+    }
+
+    if (!isFile(fullpath)) {
+        res.status(404).send('No such file');
+        return;
+    }
+
     res.setHeader('Content-disposition', 'attachment; filename=' + filename + '.png');
     res.setHeader('Content-type', 'image/png');
-    let stream = fs.createReadStream(options.dir + '/' + filename);
+    let stream = fs.createReadStream(fullpath);
     stream.pipe(res);
 }
 
