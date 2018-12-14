@@ -15,7 +15,7 @@ Source1:    remote-pdf-printer.service
 Source2:    remote-pdf-printer.sysconf
 
 BuildRequires:  nodejs-packaging systemd
-Requires:       nodejs >= 8.0 chrome-headless
+Requires:       nodejs >= 8.0 chrome-headless poppler-utils
 ExclusiveArch:  %{nodejs_arches} noarch
 
 %description
