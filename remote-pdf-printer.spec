@@ -2,21 +2,21 @@
 %global homedir   %{_localstatedir}/lib/remote-pdf-printer
 %global user      pdf
 
-Name:		remote-pdf-printer
-Version:        2.0.0	
-Release:	1%{?dist}
-Summary:	Server that accepts HTML/URLs and converts to PDFs
+Name:       remote-pdf-printer
+Version:    2.0.0
+Release:    1%{?dist}
+Summary:    Server that accepts HTML/URLs and converts to PDFs
 
-#Group:		
-License:	MIT
-URL:		https://github.com/NobletSolutions/remote-pdf-printer
-Source0:        %{name}-%{version}.tgz
-Source1:        remote-pdf-printer.service
-Source2:        remote-pdf-printer.sysconf
+#Group:        
+License:    MIT
+URL:        https://github.com/NobletSolutions/remote-pdf-printer
+Source0:    %{name}-%{version}.tgz
+Source1:    remote-pdf-printer.service
+Source2:    remote-pdf-printer.sysconf
 
-BuildRequires:	nodejs-packaging systemd
-Requires:	nodejs >= 8.0 chrome-headless
-ExclusiveArch: %{nodejs_arches} noarch
+BuildRequires:  nodejs-packaging systemd
+Requires:       nodejs >= 8.0 chrome-headless
+ExclusiveArch:  %{nodejs_arches} noarch
 
 %description
 NODEJS Server that accepts HTML/URLs and converts to PDFs
@@ -36,7 +36,7 @@ exit 0
 %systemd_postun_with_restart remote-pdf-printer.service
 
 %prep
-%setup -q 
+%setup -q -n package
 
 %build
 
