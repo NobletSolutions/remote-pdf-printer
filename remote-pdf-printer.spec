@@ -3,7 +3,7 @@
 %global user      pdf
 
 Name:       remote-pdf-printer
-Version:    2.0.1
+Version:    2.0.2
 Release:    1%{?dist}
 Summary:    Server that accepts HTML/URLs and converts to PDFs
 
@@ -46,7 +46,7 @@ exit 0
 %{__install} -Dp -m0640 server.js $RPM_BUILD_ROOT%{homedir}/server.js
 %{__install} -Dp -m0440 package.json $RPM_BUILD_ROOT%{homedir}/package.json
 %{__install} -dp $RPM_BUILD_ROOT%{homedir}/node_modules
-%{__install} -dp $RPM_BUILD_ROOT%{homedir}/files
+%{__install} -dp $RPM_BUILD_ROOT%{homedir}/files/{previews,sources,pdfs,pngs}
 %{__install} -dp $RPM_BUILD_ROOT%{homedir}/api/controllers
 %{__install} -dp $RPM_BUILD_ROOT%{homedir}/api/routes
 
@@ -60,6 +60,7 @@ exit 0
 %attr(0770,%{user},%{user}) %dir %{homedir}
 %attr(0770,%{user},%{user}) %dir %{homedir}/node_modules
 %attr(0770,%{user},%{user}) %dir %{homedir}/files
+%attr(0770,%{user},%{user}) %dir %{homedir}/files/*
 %{homedir}/server.js
 %attr(0440,%{user},%{user}) %{homedir}/package.json
 %{homedir}/api/controllers/*.js
