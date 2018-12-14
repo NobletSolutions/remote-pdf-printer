@@ -19,17 +19,25 @@ const options = {
 };
 
 async function load(html) {
-    console.log('Load(html) called');
+    if (options.debug) {
+        console.log('Load(html) called');
+    }
+
     let target = undefined;
     try {
-        console.log('Load using ports ' + options.port);
+        if (options.debug) {
+            console.log('Load using ports ' + options.port);
+        }
+
         target = await CDP.New({port: options.port});
         const client = await CDP({target});
         const {Network, Page} = client;
         await Promise.all([Network.enable(), Page.enable()]);
         return new Promise(async (resolve, reject) => {
             function complete(options) {
-                console.log('Load(html) *actually* resolved');
+                if (options.debug) {
+                    console.log('Load(html) *actually* resolved');
+                }
                 resolve(options);
             }
 
@@ -42,7 +50,10 @@ async function load(html) {
             Network.loadingFailed((params) => {
                 failed = true;
 
-                console.log('Load(html) Network.loadingFailed: "' + params.errorText + '"');
+                if (options.debug) {
+                    console.log('Load(html) Network.loadingFailed: "' + params.errorText + '"');
+                }
+
                 reject(new Error('Load(html) unable to load remote URL'));
             });
 
@@ -51,11 +62,15 @@ async function load(html) {
                     postResolvedRequests[params.requestId] = 1;
                 }
 
-                console.log('Load(html) Request (' + params.requestId + ') will be sent: ' + params.request.url);
+                if (options.debug) {
+                    console.log('Load(html) Request (' + params.requestId + ') will be sent: ' + params.request.url);
+                }
             });
 
             Network.responseReceived((params) => {
-                console.log('Load(html) Response Received: (' + params.requestId + ') Status: ' + params.response.status);
+                if (options.debug) {
+                    console.log('Load(html) Response Received: (' + params.requestId + ') Status: ' + params.response.status);
+                }
 
                 if (completed === true) {
                     delete postResolvedRequests[params.requestId];
@@ -68,7 +83,9 @@ async function load(html) {
 
             Page.navigate({url});
             await Page.loadEventFired();
-            console.log('Load(html) resolved');
+            if (options.debug) {
+                console.log('Load(html) resolved');
+            }
 
             let waitForResponse = false;
 
@@ -117,7 +134,9 @@ function getPrintOptions(body) {
         }
     };
 
-    console.log('Get Print Options');
+    if (options.debug) {
+        console.log('Get Print Options');
+    }
 
     if (body) {
         if (body.width) {
@@ -135,53 +154,32 @@ function getPrintOptions(body) {
         console.log('No body');
     }
 
-    console.log('Options: ', printOptions);
+    if (options.debug) {
+        console.log('Options: ', printOptions);
+    }
 
     return printOptions;
 }
 
-exports.print_url = function (req, res) {
-    if (!req.query.url || req.query.url === undefined) {
-        res.status(400).json({error: 'Unable to generate/save PNG!', message: 'No url submitted'});
-        return;
+exports.print = function (req, res) {
+    let data = undefined;
+
+    if (req.body.data !== undefined) {
+        data = req.body.data;
     }
 
-    console.log('Request for ' + req.query.url);
-
-    let printOptions = getPrintOptions(req.body);
-
-    getPng(req.query.url, printOptions).then(async (png) => {
-        const randomPrefixedTmpFile = uniqueFilename(options.dir);
-
-        await fs.writeFileSync(randomPrefixedTmpFile, Buffer.from(png.data, 'base64'), (error) => {
-            if (error) {
-                throw error;
-            }
-        });
-
-        console.log('wrote file ' + randomPrefixedTmpFile + ' successfully');
-
-        if (!req.query.download || req.query.download === false) {
-            res.json({url: req.query.url, png: path.basename(randomPrefixedTmpFile) + '.png'});
-            return;
-        }
-
-        servePng(res, path.basename(randomPrefixedTmpFile));
-    }).catch((error) => {
-        res.status(400).json({error: 'Unable to generate/save PNG!', message: error.message});
-        console.log('Caught ' + error);
-    });
-};
-
-exports.print_html = function (req, res) {
-    if (!req.body.data || req.body.data === undefined) {
-        res.status(400).json({error: 'Unable to generate/save PNG!', message: 'No data submitted'});
-        return;
+    if (req.body.url !== undefined) {
+        data = req.body.url;
     }
 
-    console.log('Request Content-Length: ' + (req.body.data.length / 1024) + 'kb');
+    if (data === undefined) {
+        res.status(400).json({error: 'Unable to generate/save PNG!', message: 'No url / data submitted'});
+        return;
+    }
 
     if (options.debug) {
+        console.log('Request Content-Length: ' + (req.body.data.length / 1024) + 'kb');
+
         const randomPrefixedHtmlFile = uniqueFilename(options.dir);
         fs.writeFile(randomPrefixedHtmlFile, req.body.data, (error) => {
             if (error) {
@@ -203,13 +201,20 @@ exports.print_html = function (req, res) {
             }
         });
 
-        console.log('wrote file ' + randomPrefixedTmpFile + ' successfully');
+        if (options.debug) {
+            console.log('wrote file ' + randomPrefixedTmpFile + ' successfully');
+        }
+
+        let filename = path.basename(randomPrefixedTmpFile);
         if (!req.body.download || req.body.download === false) {
-            res.json({length: req.body.data.length, png: path.basename(randomPrefixedTmpFile) + '.png'});
+            res.json({
+                png: filename,
+                url: req.protocol + '://' + req.get('host') + '/png/' + filename + '.png',
+            });
             return;
         }
 
-        servePng(res, path.basename(randomPrefixedTmpFile));
+        servePng(res, filename);
     }).catch((error) => {
         res.status(400).json({error: 'Unable to generate/save PNG!', message: error.message});
         console.log('Caught ' + error);
@@ -217,11 +222,13 @@ exports.print_html = function (req, res) {
 };
 
 exports.get_png = function (req, res) {
+    const {file} = req.params;
+
     // Ensure no one tries a directory traversal
-    if (req.query.file.indexOf('..') !== -1 || req.query.file.indexOf('.png') === -1) {
-        res.status(400).send('Invalid filename!');
+    if (!file || file.indexOf('..') !== -1 || file.indexOf('.png') === -1) {
+        res.status(404).send('Invalid filename!');
         return;
     }
 
-    servePng(res, req.query.file.replace('.png', ''));
+    servePng(res, file.replace('.png', ''));
 };
