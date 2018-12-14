@@ -125,7 +125,7 @@ function isFile(fullpath) {
 }
 
 function servePng(res, filename) {
-    let fullpath = options.dir + '/' + filename;
+    let fullpath = options.dir + '/pngs/' + filename;
     if (options.debug) {
         console.log('Requesting Filename: '+fullpath);
     }
@@ -198,7 +198,7 @@ exports.print = function (req, res) {
     if (options.debug) {
         console.log('Request Content-Length: ' + (req.body.data.length / 1024) + 'kb');
 
-        const randomPrefixedHtmlFile = uniqueFilename(options.dir);
+        const randomPrefixedHtmlFile = uniqueFilename(options.dir + '/sources/');
         fs.writeFile(randomPrefixedHtmlFile, req.body.data, (error) => {
             if (error) {
                 throw error;
@@ -211,7 +211,7 @@ exports.print = function (req, res) {
     let printOptions = getPrintOptions(req.body);
 
     getPng(req.body.data, printOptions).then(async (png) => {
-        const randomPrefixedTmpFile = uniqueFilename(options.dir);
+        const randomPrefixedTmpFile = uniqueFilename(options.dir + '/pngs/');
 
         await fs.writeFileSync(randomPrefixedTmpFile, Buffer.from(png.data, 'base64'), (error) => {
             if (error) {

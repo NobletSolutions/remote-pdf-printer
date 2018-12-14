@@ -168,7 +168,7 @@ function isFile(fullpath) {
 }
 
 function servePdf(res, filename) {
-    let fullpath = options.dir + '/' + filename;
+    let fullpath = options.dir + '/pdfs/' + filename;
     if (options.debug) {
         console.log('Requesting Filename: '+fullpath);
     }
@@ -299,7 +299,7 @@ exports.print = function (req, res) {
     }
 
     if (options.debug) {
-        const randomPrefixedHtmlFile = uniqueFilename(options.dir);
+        const randomPrefixedHtmlFile = uniqueFilename(options.dir + '/sources/');
         fs.writeFile(randomPrefixedHtmlFile, data, (error) => {
             if (error) {
                 throw error;
@@ -312,7 +312,7 @@ exports.print = function (req, res) {
     let printOptions = getPrintOptions(req.body, res);
 
     getPdf(data, printOptions).then(async (pdf) => {
-        const randomPrefixedTmpFile = uniqueFilename(options.dir);
+        const randomPrefixedTmpFile = uniqueFilename(options.dir + '/pdfs/');
 
         await fs.writeFileSync(randomPrefixedTmpFile, Buffer.from(pdf.data, 'base64'), (error) => {
             if (error) {
@@ -365,7 +365,7 @@ exports.preview = function (req, res) {
     }
 
     if (options.debug) {
-        const randomPrefixedHtmlFile = uniqueFilename(options.dir);
+        const randomPrefixedHtmlFile = uniqueFilename(options.dir + '/sources/');
         fs.writeFile(randomPrefixedHtmlFile, data, (error) => {
             if (error) {
                 throw error;
@@ -378,7 +378,7 @@ exports.preview = function (req, res) {
     let printOptions = getPrintOptions(req.body, res);
 
     getPdf(data, printOptions).then(async (pdf) => {
-        const randomPrefixedTmpFile = uniqueFilename(options.dir);
+        const randomPrefixedTmpFile = uniqueFilename(options.dir + '/pdfs/');
 
         await fs.writeFileSync(randomPrefixedTmpFile, Buffer.from(pdf.data, 'base64'), (error) => {
             if (error) {
@@ -388,7 +388,7 @@ exports.preview = function (req, res) {
 
         let opts = {
             format: 'jpeg',
-            out_dir: path.dirname(randomPrefixedTmpFile) + '/previews/',
+            out_dir: options.dir + '/previews/',
             out_prefix: path.basename(randomPrefixedTmpFile, '.pdf'),
             page: null
         };
