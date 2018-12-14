@@ -12,6 +12,12 @@ module.exports = function(app) {
     app.route('/pdf/html')
         .post(pdfPrinter.print_html);
 
+    app.route('/pdf/preview/html')
+        .post(pdfPrinter.preview_html);
+
     app.route('/pdf/get')
         .get(pdfPrinter.get_pdf);
+
+    app.route('/pdf/preview/get')
+        .get(pdfPrinter.get_preview);
 };

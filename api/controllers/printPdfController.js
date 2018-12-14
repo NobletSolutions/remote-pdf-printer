@@ -11,6 +11,7 @@ const uniqueFilename = require('unique-filename');
 const path = require('path');
 const fs = require('fs');
 const CDP = require('chrome-remote-interface');
+const poppler = require('pdf-poppler');
 
 let headerFooterStyle = `<style type="text/css" media="print">
 		/* Do not edit below this line */
@@ -225,6 +226,13 @@ function getPrintOptions(body) {
     return printOptions;
 }
 
+function servePreview(res, filename) {
+    res.setHeader('Content-disposition', 'attachment; filename=' + filename);
+    res.setHeader('Content-type', 'image/jpeg');
+    let stream = fs.createReadStream(options.dir + '/' + filename);
+    stream.pipe(res);
+}
+
 exports.print_url = function (req, res) {
     if (!req.query.url || req.query.url === undefined) {
         res.status(400).json({error: 'Unable to generate/save PDF!', message: 'No url submitted'});
@@ -309,4 +317,88 @@ exports.get_pdf = function (req, res) {
     }
 
     servePdf(res, req.query.file.replace('.pdf', ''));
+};
+
+exports.preview_html = function (req, res) {
+    if (!req.body.data || req.body.data === undefined) {
+        res.status(400).json({error: 'Unable to generate/save PDF!', message: 'No data submitted'});
+        return;
+    }
+
+    console.log('Request Content-Length: ' + (req.body.data.length / 1024) + 'kb');
+
+    if (options.debug) {
+        const randomPrefixedHtmlFile = uniqueFilename(options.dir);
+        fs.writeFile(randomPrefixedHtmlFile, req.body.data, (error) => {
+            if (error) {
+                throw error;
+            }
+        });
+
+        console.log('wrote HTML file ' + randomPrefixedHtmlFile + ' successfully');
+    }
+
+    let printOptions = getPrintOptions(req.body);
+
+    getPdf(req.body.data, printOptions).then(async (pdf) => {
+        const randomPrefixedTmpFile = uniqueFilename(options.dir);
+
+        await fs.writeFileSync(randomPrefixedTmpFile, Buffer.from(pdf.data, 'base64'), (error) => {
+            if (error) {
+                throw error;
+            }
+        });
+
+        let opts = {
+            format: 'jpeg',
+            out_dir: path.dirname(randomPrefixedTmpFile),
+            out_prefix: path.basename(randomPrefixedTmpFile, '.pdf'),
+            page: null
+        };
+
+        console.log("Opts", opts);
+
+        poppler.info(randomPrefixedTmpFile)
+            .then(pdfInfo => {
+                console.log('Num Pages: '+pdfInfo.pages);
+
+                poppler.convert(randomPrefixedTmpFile, opts)
+                    .then(res => {
+                        console.log('Successfully converted' + res);
+                    })
+                    .catch(error => {
+                        console.error(error);
+                    });
+
+                console.log('wrote file ' + randomPrefixedTmpFile + ' successfully');
+
+                let filename = path.basename(randomPrefixedTmpFile);
+
+                let response = {
+                    success: true,
+                    pages: pdfInfo.pages,
+                    prefix: filename,
+                    images: []
+                };
+
+                for (let x = 1; x <= pdfInfo.pages; x++) {
+                    response.images.push(filename+'-'+x+'.jpg');
+                }
+
+                res.json(response);
+            });
+    }).catch((error) => {
+        res.status(400).json({error: 'Unable to generate/save PDF preview!', message: error.message});
+        console.log('Caught ' + error);
+    });
+};
+
+exports.get_preview = function(req, res){
+// Ensure no one tries a directory traversal
+    if (req.query.file.indexOf('..') !== -1 || req.query.file.indexOf('.jpg') === -1) {
+        res.status(400).send('Invalid filename!');
+        return;
+    }
+
+    servePreview(res, req.query.file.replace('.pdf', ''));
 };
