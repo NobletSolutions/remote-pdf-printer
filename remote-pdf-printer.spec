@@ -3,7 +3,7 @@
 %global user      pdf
 
 Name:		remote-pdf-printer
-Version:	1.1.14
+Version:        2.0.0	
 Release:	1%{?dist}
 Summary:	Server that accepts HTML/URLs and converts to PDFs
 
@@ -63,6 +63,11 @@ exit 0
 %{homedir}/api/routes/printPdfRoutes.js
 
 %changelog
+* Fri Dec 14 2018 Nathanael Noblet <nathanael@gnat.ca> - 2.0.0-1
+- New Release 
+- Refactored urls
+- Added screenshot
+
 * Fri Oct 26 2018 Nathanael Noblet <nathanael@gnat.ca> - 1.1.13-1
 - New Release (fixes header/footer scaling margin issue)
 
