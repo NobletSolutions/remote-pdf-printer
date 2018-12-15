@@ -418,9 +418,9 @@ exports.preview = function (req, res) {
                     pages: pdfInfo.pages,
                     images: []
                 };
-
+                const pad = require('pad-left');
                 for (let x = 1; x <= pdfInfo.pages; x++) {
-                    response.images.push(baseUrl + filename + '-' + x + '.jpg')
+                    response.images.push(baseUrl + filename + '-' + pad(x, pdfInfo.pages.length,'0') + '.jpg')
                 }
 
                 res.json(response);
