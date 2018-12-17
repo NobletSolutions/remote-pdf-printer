@@ -15,6 +15,7 @@ const CDP = require('chrome-remote-interface');
 const options = {
     port: process.env.CHROME_PORT || 1337,
     debug: process.env.DEBUG || false,
+    debug_sources: process.env.DEBUG || process.env.DEBUG_SOURCES || false,
     dir: process.env.DIR || __dirname + '/../../files/'
 };
 
@@ -195,7 +196,7 @@ exports.print = function (req, res) {
         return;
     }
 
-    if (options.debug) {
+    if (options.debug_sources) {
         console.log('Request Content-Length: ' + (req.body.data.length / 1024) + 'kb');
 
         const randomPrefixedHtmlFile = uniqueFilename(options.dir + '/sources/');

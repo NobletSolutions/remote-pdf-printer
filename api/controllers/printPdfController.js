@@ -58,6 +58,7 @@ let headerFooterStyle = `<style type="text/css" media="print">
 const options = {
     port: process.env.CHROME_PORT || 1337,
     debug: process.env.DEBUG || false,
+    debug_sources: process.env.DEBUG || process.env.DEBUG_SOURCES || false,
     dir: process.env.DIR || __dirname + '/../../files/'
 };
 
@@ -298,7 +299,7 @@ exports.print = function (req, res) {
         console.log('Request Content-Length: ' + (data.length / 1024) + 'kb');
     }
 
-    if (options.debug) {
+    if (options.debug_sources) {
         const randomPrefixedHtmlFile = uniqueFilename(options.dir + '/sources/');
         fs.writeFile(randomPrefixedHtmlFile, data, (error) => {
             if (error) {
@@ -364,7 +365,7 @@ exports.preview = function (req, res) {
         console.log('Request Content-Length: ' + (data.length / 1024) + 'kb');
     }
 
-    if (options.debug) {
+    if (options.debug_sources) {
         const randomPrefixedHtmlFile = uniqueFilename(options.dir + '/sources/');
         fs.writeFile(randomPrefixedHtmlFile, data, (error) => {
             if (error) {
