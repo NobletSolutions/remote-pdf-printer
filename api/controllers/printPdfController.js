@@ -191,7 +191,7 @@ function getPrintOptions(body, res) {
     };
 
     if (options.debug) {
-        console.log('Keys ' + Object.keys(body));
+        console.log('Request Keys ' + Object.keys(body));
     }
 
     if (body && body.header) {
@@ -279,21 +279,20 @@ function servePreview(res, filename) {
     stream.pipe(res);
 }
 
-exports.print = function (req, res) {
-    let data = undefined;
-
+function getData(req, res) {
     if (req.body.data !== undefined) {
-        data = req.body.data;
+        return req.body.data;
     }
 
     if (req.body.url !== undefined) {
-        data = req.body.url;
+        return req.body.url;
     }
 
-    if (data === undefined) {
-        res.status(400).json({error: 'Unable to generate/save PDF!', message: 'No url / data submitted'});
-        return;
-    }
+    res.status(400).json({error: 'Unable to retrieve data to generate PDF!', message: 'No url / data submitted'});
+}
+
+exports.print = function (req, res) {
+    let data = getData(req);
 
     if (options.debug) {
         console.log('Request Content-Length: ' + (data.length / 1024) + 'kb');
@@ -311,6 +310,58 @@ exports.print = function (req, res) {
     }
 
     let printOptions = getPrintOptions(req.body, res);
+
+    if (Array.isArray(data)) {
+        let promises = [];
+        data.forEach(function (element) {
+            promises.push(getPdf(element, printOptions));
+        });
+
+        Promise
+            .all(promises)
+            .then((pdfs) => {
+                const randomPrefixedTmpFile = uniqueFilename(options.dir + '/pdfs/');
+                let inputFiles = [];
+
+                pdfs.forEach(async function (individualPdf, index) {
+                    let fileName = randomPrefixedTmpFile + '-' + index;
+                    inputFiles.push(fileName);
+                    await fs.writeFileSync(fileName, Buffer.from(individualPdf.data, 'base64'), (error) => {
+                        if (error) {
+                            throw error;
+                        }
+                    });
+
+                    if (options.debug) {
+                        console.log('wrote file ' + fileName + ' successfully');
+                    }
+                });
+
+                if (inputFiles.length === 0) {
+                    return Error('No Input Files');
+                }
+
+                poppler.combine(inputFiles, randomPrefixedTmpFile)
+                    .then((output) => {
+                        let filename = path.basename(randomPrefixedTmpFile) + '.pdf';
+
+                        res.json({
+                            pdf: filename,
+                            url: req.protocol + '://' + req.get('host') + '/pdf/' + filename,
+                        });
+                    })
+                    .catch((error) => {
+                        console.log('pdfunite returned an error: '+error);
+                        throw error;
+                    });
+
+            })
+            .catch((error) => {
+                res.status(400).send(`Invalid request / Processing Error: ${error}`);
+            });
+
+        return;
+    }
 
     getPdf(data, printOptions).then(async (pdf) => {
         const randomPrefixedTmpFile = uniqueFilename(options.dir + '/pdfs/');
@@ -342,24 +393,7 @@ exports.print = function (req, res) {
 };
 
 exports.preview = function (req, res) {
-    let data = undefined;
-
-    if (req.body.data !== undefined) {
-        data = req.body.data;
-    }
-
-    if (req.body.url !== undefined) {
-        data = req.body.url;
-    }
-
-    if (data === undefined) {
-        res.status(400).json({
-            error: 'Unable to generate PDF preview!',
-            message: 'No url / data submitted',
-            body: req.body
-        });
-        return;
-    }
+    let data = getData(req, res);
 
     if (options.debug) {
         console.log('Request Content-Length: ' + (data.length / 1024) + 'kb');
