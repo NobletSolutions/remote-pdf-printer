@@ -412,6 +412,94 @@ exports.preview = function (req, res) {
 
     let printOptions = getPrintOptions(req.body, res);
 
+    if (Array.isArray(data)) {
+        let promises = [];
+        data.forEach(function (element) {
+            promises.push(getPdf(element, printOptions));
+        });
+
+        Promise
+            .all(promises)
+            .then((pdfs) => {
+                const randomPrefixedTmpFile = uniqueFilename(options.dir + '/pdfs/');
+                let inputFiles = [];
+
+                pdfs.forEach(async function (individualPdf, index) {
+                    let fileName = randomPrefixedTmpFile + '-' + index;
+                    inputFiles.push(fileName);
+                    await fs.writeFileSync(fileName, Buffer.from(individualPdf.data, 'base64'), (error) => {
+                        if (error) {
+                            throw error;
+                        }
+                    });
+
+                    if (options.debug) {
+                        console.log(`wrote file ${fileName} successfully`);
+                    }
+                });
+
+                if (inputFiles.length === 0) {
+                    return Error('No Input Files');
+                }
+
+                poppler.combine(inputFiles, randomPrefixedTmpFile)
+                    .then((output) => {
+                        let opts = {
+                            format: 'jpeg',
+                            out_dir: options.dir + '/previews/',
+                            out_prefix: path.basename(randomPrefixedTmpFile, '.pdf'),
+                            page: null
+                        };
+
+                        poppler.info(randomPrefixedTmpFile)
+                            .then(pdfInfo => {
+                                poppler.convert(randomPrefixedTmpFile, opts)
+                                    .then(res => {
+                                        if (options.debug) {
+                                            console.log("PDF Converted successfully");
+                                        }
+                                    })
+                                    .catch(error => {
+                                        console.error(`Poppler Convert Error: ${error}`);
+                                        //res.status(400).json({error: 'Unable to generate PDF preview!'});
+                                    });
+
+                                if (options.debug) {
+                                    console.log(`Wrote file ${randomPrefixedTmpFile} successfully`);
+                                }
+
+                                let filename = path.basename(randomPrefixedTmpFile);
+                                let baseUrl = req.protocol + '://' + req.get('host') + '/pdf/preview/';
+
+                                let response = {
+                                    success: true,
+                                    pages: pdfInfo.pages,
+                                    images: []
+                                };
+                                const pad = require('pad-left');
+                                for (let x = 1; x <= pdfInfo.pages; x++) {
+                                    response.images.push(baseUrl + filename + '-' + pad(x, pdfInfo.pages.length,'0') + '.jpg')
+                                }
+
+                                res.json(response);
+                            }).catch((error) => {
+                            console.log(`Caught: ${error}`);
+                            res.status(400).json({error: 'Unable to generate PDF preview!'});
+                        });
+                    })
+                    .catch((error) => {
+                        console.log('pdfunite returned an error: '+error);
+                        throw error;
+                    });
+
+            })
+            .catch((error) => {
+                res.status(400).send(`Invalid request / Processing Error: ${error}`);
+            });
+
+        return;
+    }
+
     getPdf(data, printOptions).then(async (pdf) => {
         const randomPrefixedTmpFile = uniqueFilename(options.dir + '/pdfs/');
 
