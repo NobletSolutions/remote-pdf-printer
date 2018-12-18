@@ -70,7 +70,7 @@ async function load(html) {
     let target = undefined;
     try {
         if (options.debug) {
-            console.log('Load using ports ' + options.port);
+            console.log(`Load using ports ${options.port}`);
         }
 
         target = await CDP.New({port: options.port});
@@ -95,7 +95,7 @@ async function load(html) {
                 failed = true;
 
                 if (options.debug) {
-                    console.log('Load(html) Network.loadingFailed: "' + params.errorText + '"');
+                    console.log(`Load(html) Network.loadingFailed: "${params.errorText}"`);
                 }
 
                 reject(new Error('Load(html) unable to load remote URL'));
@@ -107,13 +107,13 @@ async function load(html) {
                 }
 
                 if (options.debug) {
-                    console.log('Load(html) Request (' + params.requestId + ') will be sent: ' + params.request.url);
+                    console.log(`Load(html) Request (${params.requestId}) will be sent: ${params.request.url}`);
                 }
             });
 
             Network.responseReceived((params) => {
                 if (options.debug) {
-                    console.log('Load(html) Response Received: (' + params.requestId + ') Status: ' + params.response.status);
+                    console.log(`Load(html) Response Received: (${params.requestId}) Status: ${params.response.status}`);
                 }
 
                 if (completed === true) {
@@ -141,7 +141,7 @@ async function load(html) {
             waitForResponse = setTimeout(complete, 750, resolveOptions);
         });
     } catch (error) {
-        console.log('Load(html) error: ' + error);
+        console.log(`Load(html) error: ${error}`);
         if (target) {
             console.log('Load(html) closing open target');
             CDP.Close({port: options.port, id: target.id});
@@ -169,7 +169,7 @@ function isFile(fullpath) {
 }
 
 function servePdf(res, filename) {
-    let fullpath = options.dir + '/pdfs/' + filename;
+    let fullpath = `${options.dir}/pdfs/${filename}`;
     if (options.debug) {
         console.log('Requesting Filename: '+fullpath);
     }
@@ -179,7 +179,7 @@ function servePdf(res, filename) {
         return;
     }
 
-    res.setHeader('Content-disposition', 'attachment; filename=' + filename + '.pdf');
+    res.setHeader('Content-disposition', `attachment; filename=${filename}`);
     res.setHeader('Content-type', 'application/pdf');
     let stream = fs.createReadStream(fullpath);
     stream.pipe(res);
@@ -263,7 +263,7 @@ function getPrintOptions(body, res) {
 }
 
 function servePreview(res, filename) {
-    let fullpath = options.dir + '/previews/' + filename;
+    let fullpath = `${options.dir}/previews/${filename}`;
     if (options.debug) {
         console.log('Requesting Filename: '+fullpath);
     }
@@ -273,7 +273,7 @@ function servePreview(res, filename) {
         return;
     }
 
-    res.setHeader('Content-disposition', 'attachment; filename=' + filename);
+    res.setHeader('Content-disposition', `attachment; filename=${filename}`);
     res.setHeader('Content-type', 'image/jpeg');
     let stream = fs.createReadStream(fullpath);
     stream.pipe(res);
@@ -306,7 +306,7 @@ exports.print = function (req, res) {
             }
         });
 
-        console.log('wrote HTML file ' + randomPrefixedHtmlFile + ' successfully');
+        console.log(`Wrote HTML file ${randomPrefixedHtmlFile} successfully`);
     }
 
     let printOptions = getPrintOptions(req.body, res);
@@ -333,7 +333,7 @@ exports.print = function (req, res) {
                     });
 
                     if (options.debug) {
-                        console.log('wrote file ' + fileName + ' successfully');
+                        console.log(`wrote file ${fileName} successfully`);
                     }
                 });
 
@@ -373,7 +373,7 @@ exports.print = function (req, res) {
         });
 
         if (options.debug) {
-            console.log('wrote file ' + randomPrefixedTmpFile + ' successfully');
+            console.log(`wrote file ${randomPrefixedTmpFile} successfully`);
         }
 
         if (!req.body.download || req.body.download === false) {
@@ -387,7 +387,7 @@ exports.print = function (req, res) {
 
         servePdf(res, path.basename(randomPrefixedTmpFile));
     }).catch((error) => {
-        console.log('Caught ' + error);
+        console.log(`Caught ${error}`);
         res.status(400).json({error: 'Unable to generate/save PDF!', message: error.message});
     });
 };
@@ -407,7 +407,7 @@ exports.preview = function (req, res) {
             }
         });
 
-        console.log('wrote HTML file ' + randomPrefixedHtmlFile + ' successfully');
+        console.log(`Wrote HTML file ${randomPrefixedHtmlFile} successfully`);
     }
 
     let printOptions = getPrintOptions(req.body, res);
@@ -437,12 +437,12 @@ exports.preview = function (req, res) {
                         }
                     })
                     .catch(error => {
-                        console.error('Poppler Convert Error: ' + error);
+                        console.error(`Poppler Convert Error: ${error}`);
                         //res.status(400).json({error: 'Unable to generate PDF preview!'});
                     });
 
                 if (options.debug) {
-                    console.log('wrote file ' + randomPrefixedTmpFile + ' successfully');
+                    console.log(`Wrote file ${randomPrefixedTmpFile} successfully`);
                 }
 
                 let filename = path.basename(randomPrefixedTmpFile);
@@ -460,11 +460,11 @@ exports.preview = function (req, res) {
 
                 res.json(response);
             }).catch((error) => {
-            console.log('Caught: ' + error);
+            console.log(`Caught: ${error}`);
             res.status(400).json({error: 'Unable to generate PDF preview!'});
         });
     }).catch((error) => {
-        console.log('Caught ' + error);
+        console.log(`Caught: ${error}`);
         res.status(400).json({error: 'Unable to generate PDF preview!', message: error.message});
     });
 };

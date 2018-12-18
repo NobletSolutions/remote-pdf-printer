@@ -27,7 +27,7 @@ async function load(html) {
     let target = undefined;
     try {
         if (options.debug) {
-            console.log('Load using ports ' + options.port);
+            console.log(`Load using ports ${options.port}`);
         }
 
         target = await CDP.New({port: options.port});
@@ -52,7 +52,7 @@ async function load(html) {
                 failed = true;
 
                 if (options.debug) {
-                    console.log('Load(html) Network.loadingFailed: "' + params.errorText + '"');
+                    console.log(`Load(html) Network.loadingFailed: "${params.errorText}"`);
                 }
 
                 reject(new Error('Load(html) unable to load remote URL'));
@@ -64,13 +64,13 @@ async function load(html) {
                 }
 
                 if (options.debug) {
-                    console.log('Load(html) Request (' + params.requestId + ') will be sent: ' + params.request.url);
+                    console.log(`Load(html) Request (${params.requestId}) will be sent: ${params.request.url}`);
                 }
             });
 
             Network.responseReceived((params) => {
                 if (options.debug) {
-                    console.log('Load(html) Response Received: (' + params.requestId + ') Status: ' + params.response.status);
+                    console.log(`Load(html) Response Received: (${params.requestId}) Status: ${params.response.status}`);
                 }
 
                 if (completed === true) {
@@ -98,7 +98,7 @@ async function load(html) {
             waitForResponse = setTimeout(complete, 750, resolveOptions);
         });
     } catch (error) {
-        console.log('Load(html) error: ' + error);
+        console.log(`Load(html) error: ${error}`);
         if (target) {
             console.log('Load(html) closing open target');
             CDP.Close({port: options.port, id: target.id});
@@ -126,7 +126,7 @@ function isFile(fullpath) {
 }
 
 function servePng(res, filename) {
-    let fullpath = options.dir + '/pngs/' + filename;
+    let fullpath = `${options.dir}/pngs/${filename}`;
     if (options.debug) {
         console.log('Requesting Filename: '+fullpath);
     }
@@ -136,7 +136,7 @@ function servePng(res, filename) {
         return;
     }
 
-    res.setHeader('Content-disposition', 'attachment; filename=' + filename + '.png');
+    res.setHeader('Content-disposition', `attachment; filename=${filename}.png`);
     res.setHeader('Content-type', 'image/png');
     let stream = fs.createReadStream(fullpath);
     stream.pipe(res);
@@ -206,7 +206,7 @@ exports.print = function (req, res) {
             }
         });
 
-        console.log('wrote HTML file ' + randomPrefixedHtmlFile + ' successfully');
+        console.log(`wrote HTML file ${randomPrefixedHtmlFile} successfully`);
     }
 
     let printOptions = getPrintOptions(req.body);
@@ -221,7 +221,7 @@ exports.print = function (req, res) {
         });
 
         if (options.debug) {
-            console.log('wrote file ' + randomPrefixedTmpFile + ' successfully');
+            console.log(`Wrote file ${randomPrefixedTmpFile} successfully`);
         }
 
         let filename = path.basename(randomPrefixedTmpFile);
@@ -236,7 +236,7 @@ exports.print = function (req, res) {
         servePng(res, filename);
     }).catch((error) => {
         res.status(400).json({error: 'Unable to generate/save PNG!', message: error.message});
-        console.log('Caught ' + error);
+        console.log(`Caught ${error}`);
     });
 };
 
