@@ -160,6 +160,94 @@ async function getPdf(html, printOptions) {
     return pdf;
 }
 
+function writeFile(fileName, pdfStream) {
+    return new Promise(function (resolve, reject) {
+        fs.writeFileSync(fileName, Buffer.from(pdfStream.data, 'base64'), (error) => {
+            if (error) {
+                reject(error);
+            }
+        });
+
+        if (options.debug) {
+            console.log(`wrote file ${fileName} successfully`);
+        }
+
+        resolve(fileName);
+    });
+}
+
+function returnPdfResponse(req, res, pathname) {
+    if (!req.body.download || req.body.download === false) {
+        let filename = path.basename(pathname) + '.pdf';
+        res.json({
+            pdf: filename,
+            url: req.protocol + '://' + req.get('host') + '/pdf/' + filename,
+        });
+        return;
+    }
+
+    servePdf(res, path.basename(pathname));
+}
+
+function returnPreviewResponse(req, res, pdfInfo, pathname) {
+    let filename = path.basename(pathname);
+    let baseUrl  = req.protocol + '://' + req.get('host') + '/pdf/preview/';
+
+    let response = {
+        success: true,
+        pages: pdfInfo.pages,
+        images: []
+    };
+
+    const pad = require('pad-left');
+    for (let x = 1; x <= pdfInfo.pages; x++) {
+        response.images.push(baseUrl + filename + '-' + pad(x, pdfInfo.pages.length, '0') + '.jpg')
+    }
+
+    res.json(response);
+}
+
+function writeFiles(pdfs, outputFile) {
+    return new Promise(function (resolve, reject) {
+        // More than one document produced..
+        let inputFiles = [];
+
+        pdfs.forEach(async function (individualPdf, index) {
+            let fileName = outputFile + '-' + index;
+            inputFiles.push(fileName);
+            await writeFile(fileName, individualPdf);
+        });
+
+        if (inputFiles.length === 0) {
+            reject(Error('No Input Files'));
+        }
+
+        resolve(inputFiles);
+    });
+}
+
+async function combine(inputFiles, outputFile) {
+    await poppler.combine(inputFiles, outputFile);
+    return outputFile;
+}
+
+async function convert(outputFile) {
+    let opts = {
+        format: 'jpeg',
+        out_dir: options.dir + '/previews/',
+        out_prefix: path.basename(outputFile, '.pdf'),
+        page: null
+    };
+
+    await poppler.convert(outputFile, opts);
+
+    return outputFile;
+}
+
+function info(outputFile) {
+    return poppler.info(outputFile);
+}
+
 function isFile(fullpath) {
     try {
         return fs.statSync(fullpath).isFile()
@@ -171,7 +259,7 @@ function isFile(fullpath) {
 function servePdf(res, filename) {
     let fullpath = `${options.dir}/pdfs/${filename}`;
     if (options.debug) {
-        console.log('Requesting Filename: '+fullpath);
+        console.log('Requesting Filename: ' + fullpath);
     }
 
     if (!isFile(fullpath)) {
@@ -179,7 +267,7 @@ function servePdf(res, filename) {
         return;
     }
 
-    res.setHeader('Content-disposition', `attachment; filename=${filename}`);
+    res.setHeader('Content-disposition', `attachment; filename=${filename}.pdf`);
     res.setHeader('Content-type', 'application/pdf');
     let stream = fs.createReadStream(fullpath);
     stream.pipe(res);
@@ -265,7 +353,7 @@ function getPrintOptions(body, res) {
 function servePreview(res, filename) {
     let fullpath = `${options.dir}/previews/${filename}`;
     if (options.debug) {
-        console.log('Requesting Filename: '+fullpath);
+        console.log('Requesting Filename: ' + fullpath);
     }
 
     if (!isFile(fullpath)) {
@@ -281,11 +369,11 @@ function servePreview(res, filename) {
 
 function getData(req, res) {
     if (req.body.data !== undefined) {
-        return req.body.data;
+        return Array.isArray(req.body.data) ? req.body.data : [req.body.data];
     }
 
     if (req.body.url !== undefined) {
-        return req.body.url;
+        return Array.isArray(req.body.url) ? req.body.url : [req.body.url];
     }
 
     res.status(400).json({error: 'Unable to retrieve data to generate PDF!', message: 'No url / data submitted'});
@@ -311,112 +399,40 @@ exports.print = function (req, res) {
 
     let printOptions = getPrintOptions(req.body, res);
 
-    if (Array.isArray(data)) {
-        let promises = [];
-        data.forEach(function (element) {
-            promises.push(getPdf(element, printOptions));
-        });
+    let promises = [];
+    data.forEach(function (element) {
+        promises.push(getPdf(element, printOptions));
+    });
 
-        Promise
-            .all(promises)
-            .then((pdfs) => {
-                const randomPrefixedTmpFile = uniqueFilename(options.dir + '/pdfs/');
-                if(pdfs.length === 1) {
-                    fs.writeFileSync(randomPrefixedTmpFile, Buffer.from(pdfs[0].data, 'base64'), (error) => {
-                        if (error) {
-                            throw error;
-                        }
-                    });
-
-                    if (options.debug) {
-                        console.log(`wrote file ${randomPrefixedTmpFile} successfully`);
-                    }
-
-                    if (!req.body.download || req.body.download === false) {
-                        let filename = path.basename(randomPrefixedTmpFile) + '.pdf';
-                        res.json({
-                            pdf: filename,
-                            url: req.protocol + '://' + req.get('host') + '/pdf/' + filename,
-                        });
-                        return;
-                    }
-
-                    servePdf(res, path.basename(randomPrefixedTmpFile));
-                }
-
-                let inputFiles = [];
-
-                pdfs.forEach(async function (individualPdf, index) {
-                    let fileName = randomPrefixedTmpFile + '-' + index;
-                    inputFiles.push(fileName);
-                    await fs.writeFileSync(fileName, Buffer.from(individualPdf.data, 'base64'), (error) => {
-                        if (error) {
-                            throw error;
-                        }
-                    });
-
-                    if (options.debug) {
-                        console.log(`Wrote file ${fileName} successfully`);
-                    }
-                });
-
-                if (inputFiles.length === 0) {
-                    return Error('No Input Files');
-                }
-
-                poppler.combine(inputFiles, randomPrefixedTmpFile)
-                    .then((output) => {
-                        if (!req.body.download || req.body.download === false) {
-                            let filename = path.basename(randomPrefixedTmpFile) + '.pdf';
-                            res.json({
-                                pdf: filename,
-                                url: req.protocol + '://' + req.get('host') + '/pdf/' + filename,
-                            });
-                            return;
-                        }
-
-                        servePdf(res, path.basename(randomPrefixedTmpFile));
+    Promise
+        .all(promises)
+        .then((pdfs) => {
+            const randomPrefixedTmpFile = uniqueFilename(options.dir + '/pdfs/');
+            if (pdfs.length === 1) {
+                writeFile(randomPrefixedTmpFile, pdfs[0])
+                    .then(() => {
+                        return returnPdfResponse(req, res, randomPrefixedTmpFile);
                     })
                     .catch((error) => {
-                        console.log('pdfunite returned an error: '+error);
-                        throw error;
+                        console.log(`Caught Error ${error}`);
+                        res.status(400).json({error: 'Unable to generate PDF!'});
                     });
 
-            })
-            .catch((error) => {
-                res.status(400).send(`Invalid request / Processing Error: ${error}`);
-            });
-
-        return;
-    }
-
-    getPdf(data, printOptions).then(async (pdf) => {
-        const randomPrefixedTmpFile = uniqueFilename(options.dir + '/pdfs/');
-
-        await fs.writeFileSync(randomPrefixedTmpFile, Buffer.from(pdf.data, 'base64'), (error) => {
-            if (error) {
-                throw error;
+                return;
             }
+
+            writeFiles(pdfs, randomPrefixedTmpFile)
+                .then((inputFiles) => {
+                    return combine(inputFiles, randomPrefixedTmpFile);
+                })
+                .then((outputFile) => {
+                    returnPdfResponse(req, res, outputFile);
+                });
+        })
+        .catch((error) => {
+            console.log(`Caught Error ${error}`);
+            res.status(400).json({error: 'Unable to generate PDF!'});
         });
-
-        if (options.debug) {
-            console.log(`wrote file ${randomPrefixedTmpFile} successfully`);
-        }
-
-        if (!req.body.download || req.body.download === false) {
-            let filename = path.basename(randomPrefixedTmpFile) + '.pdf';
-            res.json({
-                pdf: filename,
-                url: req.protocol + '://' + req.get('host') + '/pdf/' + filename,
-            });
-            return;
-        }
-
-        servePdf(res, path.basename(randomPrefixedTmpFile));
-    }).catch((error) => {
-        console.log(`Caught ${error}`);
-        res.status(400).json({error: 'Unable to generate/save PDF!', message: error.message});
-    });
 };
 
 exports.preview = function (req, res) {
@@ -439,149 +455,64 @@ exports.preview = function (req, res) {
 
     let printOptions = getPrintOptions(req.body, res);
 
-    if (Array.isArray(data)) {
-        let promises = [];
-        data.forEach(function (element) {
-            promises.push(getPdf(element, printOptions));
-        });
+    let promises = [];
+    data.forEach(function (element) {
+        promises.push(getPdf(element, printOptions));
+    });
 
-        Promise
-            .all(promises)
-            .then((pdfs) => {
-                const randomPrefixedTmpFile = uniqueFilename(options.dir + '/pdfs/');
-                let inputFiles = [];
-
-                pdfs.forEach(async function (individualPdf, index) {
-                    let fileName = randomPrefixedTmpFile + '-' + index;
-                    inputFiles.push(fileName);
-                    await fs.writeFileSync(fileName, Buffer.from(individualPdf.data, 'base64'), (error) => {
-                        if (error) {
-                            throw error;
-                        }
-                    });
-
-                    if (options.debug) {
-                        console.log(`wrote file ${fileName} successfully`);
-                    }
-                });
-
-                if (inputFiles.length === 0) {
-                    return Error('No Input Files');
-                }
-
-                poppler.combine(inputFiles, randomPrefixedTmpFile)
-                    .then((output) => {
-                        let opts = {
-                            format: 'jpeg',
-                            out_dir: options.dir + '/previews/',
-                            out_prefix: path.basename(randomPrefixedTmpFile, '.pdf'),
-                            page: null
-                        };
-
-                        poppler.info(randomPrefixedTmpFile)
-                            .then(pdfInfo => {
-                                poppler.convert(randomPrefixedTmpFile, opts)
-                                    .then(res => {
-                                        if (options.debug) {
-                                            console.log("PDF Converted successfully");
-                                        }
-                                    })
-                                    .catch(error => {
-                                        console.error(`Poppler Convert Error: ${error}`);
-                                        //res.status(400).json({error: 'Unable to generate PDF preview!'});
-                                    });
-
-                                if (options.debug) {
-                                    console.log(`Wrote file ${randomPrefixedTmpFile} successfully`);
-                                }
-
-                                let filename = path.basename(randomPrefixedTmpFile);
-                                let baseUrl = req.protocol + '://' + req.get('host') + '/pdf/preview/';
-
-                                let response = {
-                                    success: true,
-                                    pages: pdfInfo.pages,
-                                    images: []
-                                };
-                                const pad = require('pad-left');
-                                for (let x = 1; x <= pdfInfo.pages; x++) {
-                                    response.images.push(baseUrl + filename + '-' + pad(x, pdfInfo.pages.length,'0') + '.jpg')
-                                }
-
-                                res.json(response);
-                            }).catch((error) => {
-                            console.log(`Caught: ${error}`);
-                            res.status(400).json({error: 'Unable to generate PDF preview!'});
+    Promise
+        .all(promises)
+        .then((pdfs) => {
+            const randomPrefixedTmpFile = uniqueFilename(options.dir + '/pdfs/');
+            if (pdfs.length === 1) {
+                let pdfInfo = undefined;
+                writeFile(randomPrefixedTmpFile, pdfs[0])
+                    .then((outputFile) => {
+                        info(outputFile).then((info) => {
+                            pdfInfo = info;
                         });
+                        return outputFile;
+                    })
+                    .then((outputFile) => {
+                        return convert(outputFile);
+                    })
+                    .then((outputFile) => {
+                        returnPreviewResponse(req, res, pdfInfo, outputFile);
                     })
                     .catch((error) => {
-                        console.log('pdfunite returned an error: '+error);
-                        throw error;
+                        console.log(`Caught: ${error}`);
+                        res.status(400).json({error: 'Unable to generate PDF preview!'});
                     });
 
-            })
-            .catch((error) => {
-                res.status(400).send(`Invalid request / Processing Error: ${error}`);
-            });
-
-        return;
-    }
-
-    getPdf(data, printOptions).then(async (pdf) => {
-        const randomPrefixedTmpFile = uniqueFilename(options.dir + '/pdfs/');
-
-        await fs.writeFileSync(randomPrefixedTmpFile, Buffer.from(pdf.data, 'base64'), (error) => {
-            if (error) {
-                throw error;
+                return;
             }
-        });
 
-        let opts = {
-            format: 'jpeg',
-            out_dir: options.dir + '/previews/',
-            out_prefix: path.basename(randomPrefixedTmpFile, '.pdf'),
-            page: null
-        };
-
-        poppler.info(randomPrefixedTmpFile)
-            .then(pdfInfo => {
-                poppler.convert(randomPrefixedTmpFile, opts)
-                    .then(res => {
-                        if (options.debug) {
-                            console.log("PDF Converted successfully");
-                        }
-                    })
-                    .catch(error => {
-                        console.error(`Poppler Convert Error: ${error}`);
-                        //res.status(400).json({error: 'Unable to generate PDF preview!'});
+            let pdfInfo = undefined;
+            writeFiles(pdfs, randomPrefixedTmpFile)
+                .then((inputFiles) => {
+                    return combine(inputFiles, randomPrefixedTmpFile);
+                })
+                .then((outputFile) => {
+                    info(outputFile).then((info) => {
+                        pdfInfo = info;
                     });
-
-                if (options.debug) {
-                    console.log(`Wrote file ${randomPrefixedTmpFile} successfully`);
-                }
-
-                let filename = path.basename(randomPrefixedTmpFile);
-                let baseUrl = req.protocol + '://' + req.get('host') + '/pdf/preview/';
-
-                let response = {
-                    success: true,
-                    pages: pdfInfo.pages,
-                    images: []
-                };
-                const pad = require('pad-left');
-                for (let x = 1; x <= pdfInfo.pages; x++) {
-                    response.images.push(baseUrl + filename + '-' + pad(x, pdfInfo.pages.length,'0') + '.jpg')
-                }
-
-                res.json(response);
-            }).catch((error) => {
+                    return outputFile;
+                })
+                .then((outputFile) => {
+                    return convert(outputFile);
+                })
+                .then((outputFile) => {
+                    returnPreviewResponse(req, res, pdfInfo, outputFile);
+                })
+                .catch((error) => {
+                    console.log(`Caught Error: ${error}`);
+                    res.status(400).json({error: 'Unable to generate PDF preview!'});
+                });
+        })
+        .catch((error) => {
             console.log(`Caught: ${error}`);
             res.status(400).json({error: 'Unable to generate PDF preview!'});
         });
-    }).catch((error) => {
-        console.log(`Caught: ${error}`);
-        res.status(400).json({error: 'Unable to generate PDF preview!', message: error.message});
-    });
 };
 
 exports.get_pdf = function (req, res) {
