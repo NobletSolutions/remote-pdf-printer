@@ -321,6 +321,29 @@ exports.print = function (req, res) {
             .all(promises)
             .then((pdfs) => {
                 const randomPrefixedTmpFile = uniqueFilename(options.dir + '/pdfs/');
+                if(pdfs.length === 1) {
+                    fs.writeFileSync(randomPrefixedTmpFile, Buffer.from(pdfs[0].data, 'base64'), (error) => {
+                        if (error) {
+                            throw error;
+                        }
+                    });
+
+                    if (options.debug) {
+                        console.log(`wrote file ${randomPrefixedTmpFile} successfully`);
+                    }
+
+                    if (!req.body.download || req.body.download === false) {
+                        let filename = path.basename(randomPrefixedTmpFile) + '.pdf';
+                        res.json({
+                            pdf: filename,
+                            url: req.protocol + '://' + req.get('host') + '/pdf/' + filename,
+                        });
+                        return;
+                    }
+
+                    servePdf(res, path.basename(randomPrefixedTmpFile));
+                }
+
                 let inputFiles = [];
 
                 pdfs.forEach(async function (individualPdf, index) {
@@ -333,7 +356,7 @@ exports.print = function (req, res) {
                     });
 
                     if (options.debug) {
-                        console.log(`wrote file ${fileName} successfully`);
+                        console.log(`Wrote file ${fileName} successfully`);
                     }
                 });
 
@@ -343,12 +366,16 @@ exports.print = function (req, res) {
 
                 poppler.combine(inputFiles, randomPrefixedTmpFile)
                     .then((output) => {
-                        let filename = path.basename(randomPrefixedTmpFile) + '.pdf';
+                        if (!req.body.download || req.body.download === false) {
+                            let filename = path.basename(randomPrefixedTmpFile) + '.pdf';
+                            res.json({
+                                pdf: filename,
+                                url: req.protocol + '://' + req.get('host') + '/pdf/' + filename,
+                            });
+                            return;
+                        }
 
-                        res.json({
-                            pdf: filename,
-                            url: req.protocol + '://' + req.get('host') + '/pdf/' + filename,
-                        });
+                        servePdf(res, path.basename(randomPrefixedTmpFile));
                     })
                     .catch((error) => {
                         console.log('pdfunite returned an error: '+error);
