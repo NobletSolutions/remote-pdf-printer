@@ -89,7 +89,7 @@ async function load(html) {
             let failed = false;
             let completed = false;
             let postResolvedRequests = [];
-            const url = /^(https?|file|data):/i.test(html) ? html : `data:text/html,${html}`;
+            const url = /^(https?|file|data):/i.test(html) ? html : 'data:text/html;base64,'+Buffer.from(html).toString('base64');
 
             Network.loadingFailed((params) => {
                 failed = true;
@@ -191,7 +191,7 @@ function returnPdfResponse(req, res, pathname) {
 
 function returnPreviewResponse(req, res, pdfInfo, pathname) {
     let filename = path.basename(pathname);
-    let baseUrl  = req.protocol + '://' + req.get('host') + '/pdf/preview/';
+    let baseUrl = req.protocol + '://' + req.get('host') + '/pdf/preview/';
 
     let response = {
         success: true,
@@ -367,7 +367,7 @@ function servePreview(res, filename) {
     stream.pipe(res);
 }
 
-function getData(req, res) {
+function getData(req) {
     if (req.body.data !== undefined) {
         return Array.isArray(req.body.data) ? req.body.data : [req.body.data];
     }
@@ -375,12 +375,19 @@ function getData(req, res) {
     if (req.body.url !== undefined) {
         return Array.isArray(req.body.url) ? req.body.url : [req.body.url];
     }
-
-    res.status(400).json({error: 'Unable to retrieve data to generate PDF!', message: 'No url / data submitted'});
 }
 
 exports.print = function (req, res) {
     let data = getData(req);
+
+    if (!data) {
+        if (options.debug) {
+            console.error('Unable to retrieve data to generate PDF!');
+        }
+
+        res.status(400).json({error: 'Unable to retrieve data to generate PDF!', message: 'No url / data submitted'});
+        return;
+    }
 
     if (options.debug) {
         console.log('Request Content-Length: ' + (data.length / 1024) + 'kb');
