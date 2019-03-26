@@ -17,7 +17,7 @@ const options = {
 };
 
 bodyParser = require('body-parser');
-app.use(helmet({hsts: options.use_ssl}));
+app.use(helmet());
 app.use(logger('combined',{stream: fs.createWriteStream(options.logPath+'/remote-pdf-printer.log')}));
 app.use(bodyParser.urlencoded({limit: '10mb', extended: true }));
 const pdfRoutes = require('./api/routes/printPdfRoutes');
