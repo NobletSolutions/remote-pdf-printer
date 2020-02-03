@@ -339,12 +339,35 @@ function getPrintOptions(body, res) {
         console.log('No Footer');
     }
 
-    if (body && body.marginLeft) {
-        printOptions.marginLeft = parseFloat(body.marginLeft);
-    }
+    if (body) {
+        if (body.marginLeft) {
+            printOptions.marginLeft = parseFloat(body.marginLeft);
+        }
 
-    if (body && body.marginRight) {
-        printOptions.marginRight = parseFloat(body.marginRight);
+        if (body.marginRight) {
+            printOptions.marginRight = parseFloat(body.marginRight);
+        }
+
+        if (!printOptions.hasOwnProperty('marginTop') && body.marginTop) {
+            let adjustment = 0.35;
+            let requestedMargin = parseFloat(body.marginTop);
+
+            if (requestedMargin - 1 > 0) {
+                adjustment += 0.35 * (requestedMargin - 1);
+            }
+
+            printOptions.marginTop = requestedMargin + adjustment;
+        }
+
+        if (!printOptions.hasOwnProperty('marginBottom') && body.marginBottom) {
+            let requestedMargin = parseFloat(body.marginBottom);
+            let adjustment = 0.35;
+            if (requestedMargin - 1 > 0) {
+                adjustment += 0.35 * (requestedMargin - 1);
+            }
+
+            printOptions.marginBottom = requestedMargin + adjustment;
+        }
     }
 
     return printOptions;
