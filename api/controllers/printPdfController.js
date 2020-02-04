@@ -105,10 +105,6 @@ async function load(html) {
                 if (completed === true) {
                     postResolvedRequests[params.requestId] = 1;
                 }
-
-                if (options.debug) {
-                    console.log(`Load(html) Request (${params.requestId}) will be sent: ${params.request.url}`);
-                }
             });
 
             Network.responseReceived((params) => {
@@ -282,64 +278,63 @@ function getPrintOptions(body, res) {
         console.log('Request Keys ' + Object.keys(body));
     }
 
-    if (body && body.header) {
-        if (!body.marginTop) {
-            res.status(400).json({
-                error: 'Unable to generate/save PDF!',
-                message: 'When providing a header template the marginTop is required'
-            });
-        }
-
-        if (options.debug) {
-            console.log('Have Header');
-        }
-
-        printOptions.displayHeaderFooter = true;
-        printOptions.headerTemplate = headerFooterStyle + body.header;
-        printOptions.footerTemplate = '<footer></footer>';
-
-        let requestedMargin = parseFloat(body.marginTop);
-        let adjustment = 0.35;
-        if (requestedMargin - 1 > 0) {
-            adjustment += 0.35 * (requestedMargin - 1);
-        }
-
-        printOptions.marginTop = requestedMargin + adjustment; //accounts for the odd -0.16in margins
-    } else if (options.debug) {
-        console.log('No Header');
-    }
-
-    if (body && body.footer) {
-        if (!body.marginBottom) {
-            res.status(400).json({
-                error: 'Unable to generate/save PDF!',
-                message: 'When providing a footer template the marginBottom is required'
-            });
-        }
-
-        if (options.debug) {
-            console.log('Have Footer');
-        }
-
-        printOptions.displayHeaderFooter = true;
-        printOptions.footerTemplate = headerFooterStyle + body.footer;
-        if (!printOptions.headerTemplate) {
-            printOptions.headerTemplate = '<header></header>';
-        }
-
-        let requestedMargin = parseFloat(body.marginBottom);
-        let adjustment = 0.35;
-        if (requestedMargin - 1 > 0) {
-            adjustment += 0.35 * (requestedMargin - 1);
-        }
-
-        printOptions.marginBottom = requestedMargin + adjustment;
-
-    } else if (options.debug) {
-        console.log('No Footer');
-    }
-
     if (body) {
+        if (body.header) {
+            if (!body.marginTop) {
+                res.status(400).json({
+                    error: 'Unable to generate/save PDF!',
+                    message: 'When providing a header template the marginTop is required'
+                });
+            }
+
+            if (options.debug) {
+                console.log('Have Header');
+            }
+
+            printOptions.displayHeaderFooter = true;
+            printOptions.headerTemplate = headerFooterStyle + body.header;
+            printOptions.footerTemplate = '<footer></footer>';
+
+            let requestedMargin = parseFloat(body.marginTop);
+            let adjustment = 0.35;
+            if (requestedMargin - 1 > 0) {
+                adjustment += 0.35 * (requestedMargin - 1);
+            }
+
+            printOptions.marginTop = requestedMargin + adjustment; //accounts for the odd -0.16in margins
+        } else if (options.debug) {
+            console.log('No Header');
+        }
+
+        if (body.footer) {
+            if (!body.marginBottom) {
+                res.status(400).json({
+                    error: 'Unable to generate/save PDF!',
+                    message: 'When providing a footer template the marginBottom is required'
+                });
+            }
+
+            if (options.debug) {
+                console.log('Have Footer');
+            }
+
+            printOptions.displayHeaderFooter = true;
+            printOptions.footerTemplate = headerFooterStyle + body.footer;
+            if (!printOptions.headerTemplate) {
+                printOptions.headerTemplate = '<header></header>';
+            }
+
+            let requestedMargin = parseFloat(body.marginBottom);
+            let adjustment = 0.35;
+            if (requestedMargin - 1 > 0) {
+                adjustment += 0.35 * (requestedMargin - 1);
+            }
+
+            printOptions.marginBottom = requestedMargin + adjustment;
+        } else if (options.debug) {
+            console.log('No Footer');
+        }
+
         if (body.marginLeft) {
             printOptions.marginLeft = parseFloat(body.marginLeft);
         }
@@ -349,25 +344,16 @@ function getPrintOptions(body, res) {
         }
 
         if (!printOptions.hasOwnProperty('marginTop') && body.marginTop) {
-            let adjustment = 0.35;
-            let requestedMargin = parseFloat(body.marginTop);
-
-            if (requestedMargin - 1 > 0) {
-                adjustment += 0.35 * (requestedMargin - 1);
-            }
-
-            printOptions.marginTop = requestedMargin + adjustment;
+            printOptions.marginTop = parseFloat(body.marginTop);
         }
 
         if (!printOptions.hasOwnProperty('marginBottom') && body.marginBottom) {
-            let requestedMargin = parseFloat(body.marginBottom);
-            let adjustment = 0.35;
-            if (requestedMargin - 1 > 0) {
-                adjustment += 0.35 * (requestedMargin - 1);
-            }
-
-            printOptions.marginBottom = requestedMargin + adjustment;
+            printOptions.marginBottom = parseFloat(body.marginBottom);
         }
+    }
+
+    if (options.debug) {
+        console.log('PrintOptions: ' + Object.keys(printOptions));
     }
 
     return printOptions;
