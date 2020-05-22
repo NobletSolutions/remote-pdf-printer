@@ -389,6 +389,10 @@ function getData(req) {
 }
 
 exports.print = function (req, res) {
+    if (!req.is('application/x-www-form-urlencoded')) {
+        res.status(400).json({error: 'Unable to retrieve data to generate PDF!', message: 'Invalid Content-Type'});
+    }
+
     let data = getData(req);
 
     if (!data) {
@@ -454,6 +458,10 @@ exports.print = function (req, res) {
 };
 
 exports.preview = function (req, res) {
+    if (!req.is('application/x-www-form-urlencoded')) {
+        res.status(400).json({error: 'Unable to retrieve data to generate PDF!', message: 'Invalid Content-Type'});
+    }
+
     let data = getData(req, res);
 
     if (data && options.debug) {
