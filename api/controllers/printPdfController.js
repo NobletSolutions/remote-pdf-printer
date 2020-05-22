@@ -384,6 +384,8 @@ function getData(req) {
     if (req.body.url !== undefined) {
         return Array.isArray(req.body.url) ? req.body.url : [req.body.url];
     }
+
+    return [];
 }
 
 exports.print = function (req, res) {
@@ -454,7 +456,7 @@ exports.print = function (req, res) {
 exports.preview = function (req, res) {
     let data = getData(req, res);
 
-    if (options.debug) {
+    if (data && options.debug) {
         console.log('Request Content-Length: ' + (data.length / 1024) + 'kb');
     }
 
