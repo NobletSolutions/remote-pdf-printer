@@ -181,10 +181,6 @@ function getPrintOptions(body) {
 }
 
 exports.print = function (req, res) {
-    if (!req.is('application/x-www-form-urlencoded')) {
-        res.status(400).json({error: 'Unable to retrieve data to generate PDF!', message: 'Invalid Content-Type'});
-    }
-
     let data = undefined;
 
     if (req.body.data !== undefined) {

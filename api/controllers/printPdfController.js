@@ -89,7 +89,7 @@ async function load(html) {
             let failed = false;
             let completed = false;
             let postResolvedRequests = [];
-            const url = /^(https?|file|data):/i.test(html) ? html : 'data:text/html;base64,'+Buffer.from(html).toString('base64');
+            const url = /^(https?|file|data):/i.test(html) ? html : 'data:text/html;base64,' + Buffer.from(html).toString('base64');
 
             Network.loadingFailed((params) => {
                 failed = true;
@@ -389,10 +389,6 @@ function getData(req) {
 }
 
 exports.print = function (req, res) {
-    if (!req.is('application/x-www-form-urlencoded')) {
-        res.status(400).json({error: 'Unable to retrieve data to generate PDF!', message: 'Invalid Content-Type'});
-    }
-
     let data = getData(req);
 
     if (!data) {
@@ -449,6 +445,10 @@ exports.print = function (req, res) {
                 })
                 .then((outputFile) => {
                     returnPdfResponse(req, res, outputFile);
+                })
+                .catch((error) => {
+                    console.log(`Caught Error ${error}`);
+                    res.status(400).json({error: 'Unable to generate PDF!'});
                 });
         })
         .catch((error) => {
@@ -458,10 +458,6 @@ exports.print = function (req, res) {
 };
 
 exports.preview = function (req, res) {
-    if (!req.is('application/x-www-form-urlencoded')) {
-        res.status(400).json({error: 'Unable to retrieve data to generate PDF!', message: 'Invalid Content-Type'});
-    }
-
     let data = getData(req, res);
 
     if (data && options.debug) {
