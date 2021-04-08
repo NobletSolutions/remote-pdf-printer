@@ -61,3 +61,5 @@ typings/
 /files/pdfs/*
 /files/previews/*
 /files/sources/*
+
+.idea
