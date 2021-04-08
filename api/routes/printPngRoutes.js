@@ -1,16 +1,11 @@
 'use strict';
 
-const multer = require('multer');
-
-let formMulter = multer();
-
-module.exports = function(app) {
+module.exports = function(app, formMulter) {
     const pngPrinter = require('../controllers/printPngController');
 
     // todoList Routes
-    app.route('/png')
-        .post(pngPrinter.print, formMulter.none());
+    app.post('/png', formMulter.none(), pngPrinter.print);
 
     app.route('/png/:file')
-        .get(pngPrinter.get_png, formMulter.none());
+        .get(pngPrinter.get_png);
 };

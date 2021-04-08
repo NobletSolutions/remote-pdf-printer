@@ -4,6 +4,10 @@ const https = require('https');
 const logger = require('morgan');
 const helmet = require('helmet');
 const constants = require('constants');
+const multer = require('multer');
+
+let formMulter = multer();
+
 app = express();
 
 const options = {
@@ -22,8 +26,8 @@ app.use(logger('combined',{stream: fs.createWriteStream(options.logPath+'/remote
 app.use(bodyParser.urlencoded({limit: '10mb', extended: true }));
 const pdfRoutes = require('./api/routes/printPdfRoutes');
 const pngRoutes = require('./api/routes/printPngRoutes');
-pdfRoutes(app);
-pngRoutes(app);
+pdfRoutes(app, formMulter);
+pngRoutes(app, formMulter);
 
 if(options.use_ssl === true) {
     console.log('USING SSL! KEY: '+options.keyPath+"\nCert: "+options.certPath+"\nPort: "+options.port);
