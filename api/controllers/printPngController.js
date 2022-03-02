@@ -46,7 +46,7 @@ async function load(html) {
             let failed = false;
             let completed = false;
             let postResolvedRequests = [];
-            const url = /^(https?|file|data):/i.test(html) ? html : `data:text/html,${html}`;
+            const url = /^(https?|file|data):/i.test(html) ? html : 'data:text/html;base64,' + Buffer.from(html).toString('base64');
 
             Network.loadingFailed((params) => {
                 failed = true;
