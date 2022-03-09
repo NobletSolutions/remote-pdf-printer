@@ -3,7 +3,7 @@
 %global user      pdf
 
 Name:       remote-pdf-printer
-Version:    2.0.14
+Version:    2.0.15
 Release:    1%{?dist}
 Summary:    Server that accepts HTML/URLs and converts to PDFs
 
@@ -52,6 +52,16 @@ exit 0
 
 %{__install} -Dp -m0440 api/controllers/*js $RPM_BUILD_ROOT%{homedir}/api/controllers/
 %{__install} -Dp -m0440 api/routes/*.js $RPM_BUILD_ROOT%{homedir}/api/routes/
+cp -a node_modules/* $RPM_BUILD_ROOT%{homedir}/node_modules/
+find $RPM_BUILD_ROOT%{homedir}/node_modules -name ".travis.yml" -exec rm {} \;
+find $RPM_BUILD_ROOT%{homedir}/node_modules -name ".npmignore" -exec rm {} \;
+find $RPM_BUILD_ROOT%{homedir}/node_modules -name ".nycrc" -exec rm {} \;
+find $RPM_BUILD_ROOT%{homedir}/node_modules -name ".eslint*" -exec rm {} \;
+find $RPM_BUILD_ROOT%{homedir}/node_modules -name ".jshintrc" -exec rm {} \;
+rm -rf $RPM_BUILD_ROOT%{homedir}/node_modules/unique-filename/.nyc_output
+rm -rf $RPM_BUILD_ROOT%{homedir}/node_modules/qs/{.editorconfig,.github}
+rm -rf $RPM_BUILD_ROOT%{homedir}/node_modules/debug/.coveralls.yml
+
 
 %files
 %doc
@@ -59,6 +69,8 @@ exit 0
 %config(noreplace) %{_sysconfdir}/sysconfig/remote-pdf-printer
 %attr(0770,%{user},%{user}) %dir %{homedir}
 %attr(0770,%{user},%{user}) %dir %{homedir}/node_modules
+%attr(0770,%{user},%{user}) %dir %{homedir}/node_modules/*
+%attr(0440,%{user},%{user}) %{homedir}/node_modules/*/*
 %attr(0770,%{user},%{user}) %dir %{homedir}/files
 %attr(0770,%{user},%{user}) %dir %{homedir}/files/*
 %{homedir}/server.js
@@ -67,6 +79,9 @@ exit 0
 %{homedir}/api/routes/*.js
 
 %changelog
+* Tue Mar 8 2020 Nathanael Noblet <nathanael@gnat.ca> - 2.0.15-1
+- Bundle all dependencies for smoother installs
+
 * Fri Dec 14 2018 Nathanael Noblet <nathanael@gnat.ca> - 2.0.0-1
 - New Release 
 - Refactored urls
