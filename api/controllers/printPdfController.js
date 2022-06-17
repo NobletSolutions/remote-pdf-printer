@@ -350,6 +350,13 @@ function getPrintOptions(body, res) {
         if (!printOptions.hasOwnProperty('marginBottom') && body.marginBottom) {
             printOptions.marginBottom = parseFloat(body.marginBottom);
         }
+
+        if(body.hasOwnProperty('paperSize') && body.paperSize)
+        {
+            printOptions.paperWidth = parseFloat(body.paperSize[0]);
+            printOptions.paperHeight = parseFloat(body.paperSize[1]);
+        }
+
     }
 
     if (options.debug) {
