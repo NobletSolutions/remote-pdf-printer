@@ -3,7 +3,7 @@
 %global user      pdf
 
 Name:       remote-pdf-printer
-Version:    2.0.15
+Version:    2.0.16
 Release:    1%{?dist}
 Summary:    Server that accepts HTML/URLs and converts to PDFs
 
@@ -79,7 +79,11 @@ rm -rf $RPM_BUILD_ROOT%{homedir}/node_modules/debug/.coveralls.yml
 %{homedir}/api/routes/*.js
 
 %changelog
-* Tue Mar 8 2020 Nathanael Noblet <nathanael@gnat.ca> - 2.0.15-1
+* Thu Sep 1 2022 Nathanael Noblet <nathanael@gnat.ca> - 2.0.16-1
+- New release
+- Support page size
+
+* Tue Mar 9 2020 Nathanael Noblet <nathanael@gnat.ca> - 2.0.15-1
 - Bundle all dependencies for smoother installs
 
 * Fri Dec 14 2018 Nathanael Noblet <nathanael@gnat.ca> - 2.0.0-1
