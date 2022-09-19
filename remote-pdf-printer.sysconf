@@ -1,0 +1,6 @@
+SSL_KEY=/etc/pki/tls/private/localhost.key
+SSL_CERT=/etc/pki/tls/certs/localhost.crt
+SSL_CA=/etc/pki/tls/certs/ca.crt
+
+#Removes historical data older than 14 days
+CLEAN_PDFS_OLDER_THAN=14

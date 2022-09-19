@@ -1,0 +1,14 @@
+[Unit]
+Description=Remote HTML/URL->PDF Printer
+After=chrome-headless.service
+Requires=chrome-headless.service
+
+[Service]
+Type=simple
+EnvironmentFile=/etc/sysconfig/remote-pdf-printer
+ExecStart=/usr/bin/node /var/lib/remote-pdf-printer/server.js
+PrivateTmp=false
+WorkingDirectory=/var/lib/remote-pdf-printer
+
+[Install]
+WantedBy=multi-user.target

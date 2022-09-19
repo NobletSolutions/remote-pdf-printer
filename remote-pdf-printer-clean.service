@@ -1,0 +1,13 @@
+[Unit]
+Description=Cleans Remote HTML/URL->PDF Printer Artifacts
+Requires=remote-pdf-printer.service
+
+[Service]
+Type=oneshot
+EnvironmentFile=/etc/sysconfig/remote-pdf-printer
+ExecStart=/usr/bin/find ./files -type f -ctime +${CLEAN_PDFS_OLDER_THAN} -exec rm -rf {} \;
+PrivateTmp=false
+WorkingDirectory=/var/lib/remote-pdf-printer
+
+[Install]
+WantedBy=multi-user.target

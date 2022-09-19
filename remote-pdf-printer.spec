@@ -4,15 +4,16 @@
 
 Name:       remote-pdf-printer
 Version:    2.0.16
-Release:    1%{?dist}
+Release:    4%{?dist}
 Summary:    Server that accepts HTML/URLs and converts to PDFs
 
-#Group:        
 License:    MIT
 URL:        https://github.com/NobletSolutions/remote-pdf-printer
 Source0:    %{name}-%{version}.tgz
 Source1:    remote-pdf-printer.service
 Source2:    remote-pdf-printer.sysconf
+Source3:    remote-pdf-printer-clean.service
+Source4:    remote-pdf-printer-clean.timer
 
 BuildRequires:  nodejs-packaging systemd
 Requires:       nodejs >= 8.0 chrome-headless poppler-utils
@@ -28,12 +29,16 @@ exit 0
 
 %post
 %systemd_post remote-pdf-printer.service
+%systemd_post remote-pdf-printer-clean.timer
 
 %preun
 %systemd_preun remote-pdf-printer.service
+%systemd_preun remote-pdf-printer-clean.service
+%systemd_preun remote-pdf-printer-clean.timer
 
 %postun
 %systemd_postun_with_restart remote-pdf-printer.service
+%systemd_postun_with_restart remote-pdf-printer-clean.timer
 
 %prep
 %setup -q -n package
@@ -42,6 +47,8 @@ exit 0
 
 %install
 %{__install} -Dp -m0644 %{SOURCE1} $RPM_BUILD_ROOT%{_unitdir}/remote-pdf-printer.service
+%{__install} -Dp -m0644 %{SOURCE3} $RPM_BUILD_ROOT%{_unitdir}/
+%{__install} -Dp -m0644 %{SOURCE4} $RPM_BUILD_ROOT%{_unitdir}/
 %{__install} -Dp -m0644 %{SOURCE2} $RPM_BUILD_ROOT%{_sysconfdir}/sysconfig/remote-pdf-printer
 %{__install} -Dp -m0640 server.js $RPM_BUILD_ROOT%{homedir}/server.js
 %{__install} -Dp -m0440 package.json $RPM_BUILD_ROOT%{homedir}/package.json
@@ -66,6 +73,8 @@ rm -rf $RPM_BUILD_ROOT%{homedir}/node_modules/debug/.coveralls.yml
 %files
 %doc
 %{_unitdir}/remote-pdf-printer.service
+%{_unitdir}/remote-pdf-printer-clean.service
+%{_unitdir}/remote-pdf-printer-clean.timer
 %config(noreplace) %{_sysconfdir}/sysconfig/remote-pdf-printer
 %attr(0770,%{user},%{user}) %dir %{homedir}
 %attr(0770,%{user},%{user}) %dir %{homedir}/node_modules
@@ -79,11 +88,14 @@ rm -rf $RPM_BUILD_ROOT%{homedir}/node_modules/debug/.coveralls.yml
 %{homedir}/api/routes/*.js
 
 %changelog
+* Mon Sep 19 2022 Nathanael Noblet <nathanael@gnat.ca> - 2.0.16-2
+- Added systemd timers to clean the directories monthly
+
 * Thu Sep 1 2022 Nathanael Noblet <nathanael@gnat.ca> - 2.0.16-1
 - New release
 - Support page size
 
-* Tue Mar 9 2020 Nathanael Noblet <nathanael@gnat.ca> - 2.0.15-1
+* Mon Mar 9 2020 Nathanael Noblet <nathanael@gnat.ca> - 2.0.15-1
 - Bundle all dependencies for smoother installs
 
 * Fri Dec 14 2018 Nathanael Noblet <nathanael@gnat.ca> - 2.0.0-1

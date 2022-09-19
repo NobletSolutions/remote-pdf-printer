@@ -1,0 +1,10 @@
+[Unit]
+Description=Clear Remote HTML/URL->PDF Printer Artifacts
+Requires=remote-pdf-printer-clean.service
+
+[Timer]
+Unit=remote-pdf-printer-clean.service
+OnCalendar=Monthly
+
+[Install]
+WantedBy=timers.target
