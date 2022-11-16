@@ -1,6 +1,6 @@
 {
   "name": "remote-pdf-printer",
-  "version": "2.0.16",
+  "version": "2.0.17",
   "description": "Simple HTTP API to print HTML/urls to PDF",
   "main": "server.js",
   "scripts": {
@@ -13,13 +13,12 @@
   "author": "Nathanael Noblet",
   "license": "MIT",
   "dependencies": {
-    "body-parser": "^1.19.0",
+    "body-parser": "^1.20.1",
     "chrome-remote-interface": "^0.26.1",
-    "constants": "0.0.2",
-    "express": "^4.17.1",
+    "express": "^4.18.2",
     "helmet": "^3.23.3",
     "morgan": "^1.10.0",
-    "multer": "^1.4.2",
+    "multer": "^1.4.5-lts.1",
     "pad-left": "^2.1.0",
     "pdf-poppler": "git+https://github.com/NobletSolutions/pdf-poppler.git#linux",
     "unique-filename": "^1.1.1"
@@ -27,7 +26,6 @@
   "bundledDependencies": [
     "body-parser",
     "chrome-remote-interface",
-    "contants",
     "express",
     "helmet",
     "morgan",

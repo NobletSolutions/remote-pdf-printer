@@ -3,7 +3,7 @@ const fs = require('fs');
 const https = require('https');
 const logger = require('morgan');
 const helmet = require('helmet');
-const constants = require('constants');
+const { constants } = require('crypto')
 const multer = require('multer');
 
 let formMulter = multer();
@@ -29,7 +29,7 @@ const pngRoutes = require('./api/routes/printPngRoutes');
 pdfRoutes(app, formMulter);
 pngRoutes(app, formMulter);
 
-if(options.use_ssl === true) {
+if (options.use_ssl === true) {
     console.log('USING SSL! KEY: '+options.keyPath+"\nCert: "+options.certPath+"\nPort: "+options.port);
     https.createServer({
         secureOptions: constants.SSL_OP_NO_TLSv1|constants.SSL_OP_NO_SSLv2|constants.SSL_OP_NO_SSLv3,
