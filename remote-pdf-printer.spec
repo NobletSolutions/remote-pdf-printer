@@ -77,8 +77,7 @@ rm -rf $RPM_BUILD_ROOT%{homedir}/node_modules/debug/.coveralls.yml
 %config(noreplace) %{_sysconfdir}/sysconfig/remote-pdf-printer
 %attr(0770,%{user},%{user}) %dir %{homedir}
 %attr(0770,%{user},%{user}) %dir %{homedir}/node_modules
-%attr(0770,%{user},%{user}) %dir %{homedir}/node_modules/*
-%attr(0440,%{user},%{user}) %{homedir}/node_modules/*/*
+%attr(0440,%{user},%{user}) %{homedir}/node_modules
 %attr(0770,%{user},%{user}) %dir %{homedir}/files
 %attr(0770,%{user},%{user}) %dir %{homedir}/files/*
 %{homedir}/server.js
