@@ -73,7 +73,7 @@ async function load(html) {
             console.log(`Load using ports ${options.port}`);
         }
 
-        target = await CDP.New({port: options.port});
+        target = await CDP.New({port: options.port, method: 'PUT'});
         const client = await CDP({target});
         const {Network, Page} = client;
         await Promise.all([Network.enable(), Page.enable()]);
