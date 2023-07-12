@@ -29,7 +29,7 @@ and can use the GET .../:file urls to retrieve the files.
     "success":true,
     "pages":"1",
     "images": [
-        "https://remote-pdf.prolegis.ca:3000/pdf/preview/9c2cd04b-1.jpg"
+        "https://remote-pdf.example.com:3000/pdf/preview/9c2cd04b-1.jpg"
     ]
 }
 ~~~
