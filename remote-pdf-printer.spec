@@ -1,10 +1,11 @@
+%global debug_package %{nil}
 %{?nodejs_find_provides_and_requires}
 %global homedir   %{_localstatedir}/lib/remote-pdf-printer
 %global user      pdf
 
 Name:       remote-pdf-printer
-Version:    2.0.17
-Release:    4%{?dist}
+Version:    2.0.18
+Release:    1%{?dist}
 Summary:    Server that accepts HTML/URLs and converts to PDFs
 
 License:    MIT
@@ -16,7 +17,7 @@ Source3:    remote-pdf-printer-clean.service
 Source4:    remote-pdf-printer-clean.timer
 
 BuildRequires:  nodejs-packaging systemd
-Requires:       nodejs >= 8.0 chrome-headless poppler-utils
+Requires:       nodejs >= 8.0 poppler-utils
 ExclusiveArch:  %{nodejs_arches} noarch
 
 %description
@@ -59,33 +60,40 @@ exit 0
 
 %{__install} -Dp -m0440 api/controllers/*js $RPM_BUILD_ROOT%{homedir}/api/controllers/
 %{__install} -Dp -m0440 api/routes/*.js $RPM_BUILD_ROOT%{homedir}/api/routes/
+
+# Clean up un-needed files
+find ./node_modules -name ".travis.yml" -exec rm {} \;
+find ./node_modules -name ".npmignore" -exec rm {} \;
+find ./node_modules -name ".nycrc" -exec rm {} \;
+find ./node_modules -name ".eslint*" -exec rm {} \;
+find ./node_modules -name ".jshintrc" -exec rm {} \;
+rm -rf ./node_modules/unique-filename/.nyc_output
+rm -rf ./node_modules/qs/{.editorconfig,.github}
+rm -rf ./node_modules/debug/.coveralls.yml
+
 cp -a node_modules/* $RPM_BUILD_ROOT%{homedir}/node_modules/
-find $RPM_BUILD_ROOT%{homedir}/node_modules -name ".travis.yml" -exec rm {} \;
-find $RPM_BUILD_ROOT%{homedir}/node_modules -name ".npmignore" -exec rm {} \;
-find $RPM_BUILD_ROOT%{homedir}/node_modules -name ".nycrc" -exec rm {} \;
-find $RPM_BUILD_ROOT%{homedir}/node_modules -name ".eslint*" -exec rm {} \;
-find $RPM_BUILD_ROOT%{homedir}/node_modules -name ".jshintrc" -exec rm {} \;
-rm -rf $RPM_BUILD_ROOT%{homedir}/node_modules/unique-filename/.nyc_output
-rm -rf $RPM_BUILD_ROOT%{homedir}/node_modules/qs/{.editorconfig,.github}
-rm -rf $RPM_BUILD_ROOT%{homedir}/node_modules/debug/.coveralls.yml
 
 %files
 %doc
-%{_unitdir}/remote-pdf-printer.service
-%{_unitdir}/remote-pdf-printer-clean.service
-%{_unitdir}/remote-pdf-printer-clean.timer
-%config(noreplace) %{_sysconfdir}/sysconfig/remote-pdf-printer
-%attr(0770,%{user},%{user}) %dir %{homedir}
-%attr(0770,%{user},%{user}) %dir %{homedir}/node_modules
-%attr(0440,%{user},%{user}) %{homedir}/node_modules
-%attr(0770,%{user},%{user}) %dir %{homedir}/files
-%attr(0770,%{user},%{user}) %dir %{homedir}/files/*
+%defattr(0440, %{user},%{user}, 0750)
+%attr(0644, root, root) %{_unitdir}/remote-pdf-printer.service
+%attr(0644, root, root) %{_unitdir}/remote-pdf-printer-clean.service
+%attr(0644, root, root) %{_unitdir}/remote-pdf-printer-clean.timer
+%attr(0644, root, root) %config(noreplace) %{_sysconfdir}/sysconfig/remote-pdf-printer
+%dir %{homedir}
+%dir %{homedir}/node_modules
+%dir %{homedir}/files
+%dir %{homedir}/files/*
+%{homedir}/node_modules
 %{homedir}/server.js
-%attr(0440,%{user},%{user}) %{homedir}/package.json
+%{homedir}/package.json
 %{homedir}/api/controllers/*.js
 %{homedir}/api/routes/*.js
 
 %changelog
+* Wed May 8 2024 Nathanael Noblet <nathanael@gnat.ca> - 2.0.18-1
+- Bump release
+
 * Mon Sep 19 2022 Nathanael Noblet <nathanael@gnat.ca> - 2.0.16-2
 - Added systemd timers to clean the directories monthly
 
