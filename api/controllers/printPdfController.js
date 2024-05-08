@@ -479,7 +479,7 @@ exports.preview = function (req, res) {
 
     if (options.debug_sources) {
         const randomPrefixedHtmlFile = uniqueFilename(options.dir + '/sources/');
-        fs.writeFile(randomPrefixedHtmlFile, data, (error) => {
+        fs.writeFile(randomPrefixedHtmlFile, Buffer.from(data), (error) => {
             if (error) {
                 throw error;
             }
