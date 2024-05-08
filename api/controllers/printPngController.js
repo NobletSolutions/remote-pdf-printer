@@ -207,7 +207,7 @@ exports.print = function (req, res) {
         console.log('Request Content-Length: ' + (req.body.data.length / 1024) + 'kb');
 
         const randomPrefixedHtmlFile = uniqueFilename(options.dir + '/sources/');
-        fs.writeFile(randomPrefixedHtmlFile, req.body.data, (error) => {
+        fs.writeFile(randomPrefixedHtmlFile, Buffer.from(req.body.data), (error) => {
             if (error) {
                 throw error;
             }
