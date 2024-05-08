@@ -13,6 +13,7 @@ const fs = require('fs');
 const CDP = require('chrome-remote-interface');
 
 const options = {
+    url: process.env.CHROME_URL || false,
     port: process.env.CHROME_PORT || 1337,
     debug: process.env.DEBUG || false,
     debug_sources: process.env.DEBUG || process.env.DEBUG_SOURCES || false,
@@ -27,10 +28,16 @@ async function load(html) {
     let target = undefined;
     try {
         if (options.debug) {
-            console.log(`Load using ports ${options.port}`);
+            console.log(`Connect to chrome => (${options.url}):${options.port}`);
         }
 
-        target = await CDP.New({port: options.port, method: 'PUT'});
+        const connectionOptions = {port: options.port, method: 'PUT'};
+        // Allow connecting to remote chrome instances
+        if (options.url) {
+            connectionOptions['url'] = options.url;
+        }
+
+        target = await CDP.New(connectionOptions);
         const client = await CDP({target});
         const {Network, Page} = client;
         await Promise.all([Network.enable(), Page.enable()]);
