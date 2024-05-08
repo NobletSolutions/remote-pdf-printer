@@ -22,7 +22,13 @@ const options = {
 
 bodyParser = require('body-parser');
 app.use(helmet());
-app.use(logger('combined',{stream: fs.createWriteStream(options.logPath+'/remote-pdf-printer.log')}));
+
+if (options.logPath != "false") {
+    app.use(logger('combined',{stream: fs.createWriteStream(options.logPath+'/remote-pdf-printer.log')}));
+} else {
+    app.use(logger('combined'));
+}
+
 app.use(bodyParser.urlencoded({limit: '10mb', extended: true }));
 const pdfRoutes = require('./api/routes/printPdfRoutes');
 const pngRoutes = require('./api/routes/printPngRoutes');
