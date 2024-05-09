@@ -12,13 +12,16 @@ const path = require('path');
 const fs = require('fs');
 const CDP = require('chrome-remote-interface');
 
-const options = {
+const connectionOptions = {
     host: process.env.CHROME_URL || null,
     port: process.env.CHROME_PORT || 1337,
+    method: 'PUT'
+}
+
+const options = {
     debug: process.env.DEBUG || false,
     debug_sources: process.env.DEBUG || process.env.DEBUG_SOURCES || false,
     dir: process.env.DIR || __dirname + '/../../files/',
-    method: 'PUT'
 };
 
 async function load(html) {
@@ -29,10 +32,10 @@ async function load(html) {
     let target = undefined;
     try {
         if (options.debug) {
-            console.log('Connection params:'+JSON.stringify(options));
+            console.log('Connection params:'+JSON.stringify(connectionOptions));
         }
 
-        target = await CDP.New(options);
+        target = await CDP.New(connectionOptions);
 
         const client = await CDP({target});
         const {Network, Page} = client;
@@ -94,7 +97,7 @@ async function load(html) {
             let waitForResponse = false;
 
             if (failed) {
-                const closeOptions = options;
+                const closeOptions = connectionOptions;
                 closeOptions['id'] = target.id;
                 await CDP.Close(closeOptions);
             }
@@ -106,7 +109,7 @@ async function load(html) {
         console.log(`Load(html) error: ${error}`);
         if (target) {
             console.log('Load(html) closing open target');
-            const closeOptions = options;
+            const closeOptions = connectionOptions;
             closeOptions['id'] = target.id;
             await CDP.Close(closeOptions);
         }
@@ -119,7 +122,7 @@ async function getPng(html, printOptions) {
 
     // https://chromedevtools.github.io/devtools-protocol/tot/Page#type-Viewport
     const png = await Page.captureScreenshot(printOptions);
-    const closeOptions = options;
+    const closeOptions = connectionOptions;
     closeOptions['id'] = target.id;
     await CDP.Close(closeOptions);
 
