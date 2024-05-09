@@ -56,11 +56,12 @@ let headerFooterStyle = `<style type="text/css" media="print">
 </style>`;
 
 const options = {
-    url: process.env.CHROME_URL || false,
+    host: process.env.CHROME_URL || null,
     port: process.env.CHROME_PORT || 1337,
     debug: process.env.DEBUG || false,
     debug_sources: process.env.DEBUG || process.env.DEBUG_SOURCES || false,
-    dir: process.env.DIR || __dirname + '/../../files/'
+    dir: process.env.DIR || __dirname + '/../../files/',
+    method: 'PUT'
 };
 
 async function load(html) {
@@ -71,15 +72,10 @@ async function load(html) {
     let target = undefined;
     try {
         if (options.debug) {
-            console.log(`Connect to chrome => (${options.url}):${options.port}`);
+            console.log('Connection params:'+JSON.stringify(options));
         }
 
-        const connectionOptions = {port: options.port, method: 'PUT'};
-        // Allow connecting to remote chrome instances
-        if (options.url) {
-            connectionOptions['url'] = options.url;
-        }
-
+        target = await CDP.New(options);
         const client = await CDP({target});
         const {Network, Page} = client;
         await Promise.all([Network.enable(), Page.enable()]);
@@ -136,7 +132,9 @@ async function load(html) {
             let waitForResponse = false;
 
             if (failed) {
-                await CDP.Close({port: options.port, id: target.id});
+                const closeOptions = options;
+                closeOptions['id'] = target.id;
+                await CDP.Close(closeOptions);
             }
 
             completed = true;
@@ -146,7 +144,9 @@ async function load(html) {
         console.log(`Load(html) error: ${error}`);
         if (target) {
             console.log('Load(html) closing open target');
-            CDP.Close({port: options.port, id: target.id});
+            const closeOptions = options;
+            closeOptions['id'] = target.id;
+            CDP.Close(closeOptions);
         }
     }
 }
@@ -157,7 +157,9 @@ async function getPdf(html, printOptions) {
 
     // https://chromedevtools.github.io/debugger-protocol-viewer/tot/Page/#method-printToPDF
     const pdf = await Page.printToPDF(printOptions);
-    await CDP.Close({port: options.port, id: target.id});
+    const closeOptions = options;
+    closeOptions['id'] = target.id;
+    await CDP.Close(closeOptions);
 
     return pdf;
 }
@@ -419,7 +421,7 @@ exports.print = function (req, res) {
 
     if (options.debug_sources) {
         const randomPrefixedHtmlFile = uniqueFilename(options.dir + '/sources/');
-        fs.writeFile(randomPrefixedHtmlFile, data, (error) => {
+        fs.writeFile(randomPrefixedHtmlFile, JSON.stringify(data), (error) => {
             if (error) {
                 throw error;
             }
@@ -479,7 +481,7 @@ exports.preview = function (req, res) {
 
     if (options.debug_sources) {
         const randomPrefixedHtmlFile = uniqueFilename(options.dir + '/sources/');
-        fs.writeFile(randomPrefixedHtmlFile, Buffer.from(data), (error) => {
+        fs.writeFile(randomPrefixedHtmlFile, JSON.stringify(data), (error) => {
             if (error) {
                 throw error;
             }

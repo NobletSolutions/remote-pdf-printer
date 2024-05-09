@@ -13,11 +13,12 @@ const fs = require('fs');
 const CDP = require('chrome-remote-interface');
 
 const options = {
-    url: process.env.CHROME_URL || false,
+    host: process.env.CHROME_URL || null,
     port: process.env.CHROME_PORT || 1337,
     debug: process.env.DEBUG || false,
     debug_sources: process.env.DEBUG || process.env.DEBUG_SOURCES || false,
-    dir: process.env.DIR || __dirname + '/../../files/'
+    dir: process.env.DIR || __dirname + '/../../files/',
+    method: 'PUT'
 };
 
 async function load(html) {
@@ -28,16 +29,11 @@ async function load(html) {
     let target = undefined;
     try {
         if (options.debug) {
-            console.log(`Connect to chrome => (${options.url}):${options.port}`);
+            console.log('Connection params:'+JSON.stringify(options));
         }
 
-        const connectionOptions = {port: options.port, method: 'PUT'};
-        // Allow connecting to remote chrome instances
-        if (options.url) {
-            connectionOptions['url'] = options.url;
-        }
+        target = await CDP.New(options);
 
-        target = await CDP.New(connectionOptions);
         const client = await CDP({target});
         const {Network, Page} = client;
         await Promise.all([Network.enable(), Page.enable()]);
@@ -98,7 +94,9 @@ async function load(html) {
             let waitForResponse = false;
 
             if (failed) {
-                await CDP.Close({port: options.port, id: target.id});
+                const closeOptions = options;
+                closeOptions['id'] = target.id;
+                await CDP.Close(closeOptions);
             }
 
             completed = true;
@@ -108,7 +106,9 @@ async function load(html) {
         console.log(`Load(html) error: ${error}`);
         if (target) {
             console.log('Load(html) closing open target');
-            CDP.Close({port: options.port, id: target.id});
+            const closeOptions = options;
+            closeOptions['id'] = target.id;
+            await CDP.Close(closeOptions);
         }
     }
 }
@@ -119,7 +119,9 @@ async function getPng(html, printOptions) {
 
     // https://chromedevtools.github.io/devtools-protocol/tot/Page#type-Viewport
     const png = await Page.captureScreenshot(printOptions);
-    await CDP.Close({port: options.port, id: target.id});
+    const closeOptions = options;
+    closeOptions['id'] = target.id;
+    await CDP.Close(closeOptions);
 
     return png;
 }
@@ -207,7 +209,7 @@ exports.print = function (req, res) {
         console.log('Request Content-Length: ' + (req.body.data.length / 1024) + 'kb');
 
         const randomPrefixedHtmlFile = uniqueFilename(options.dir + '/sources/');
-        fs.writeFile(randomPrefixedHtmlFile, Buffer.from(req.body.data), (error) => {
+        fs.writeFile(randomPrefixedHtmlFile, JSON.stringify(req.body.data), (error) => {
             if (error) {
                 throw error;
             }
