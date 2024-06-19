@@ -100,13 +100,17 @@ async function load(html) {
                 failed = true;
 
                 if (options.debug) {
-                    console.log(`Load(html) Network.loadingFailed: "${params.errorText}"`);
+                    console.log(`Load(html) Network.loadingFailed: "${params.requestId}" "${params.type}" "${params.errorText}"`);
                 }
 
                 reject(new Error('Load(html) unable to load remote URL'));
             });
 
             Network.requestWillBeSent((params) => {
+                if (options.debug) {
+                    console.log(`Load(html) Network.requestWillBeSent: "${params.requestId}" "${params.type}" "${params.documentURL}"`);
+                }
+
                 if (completed === true) {
                     postResolvedRequests[params.requestId] = 1;
                 }
