@@ -9,6 +9,7 @@ EnvironmentFile=/etc/sysconfig/remote-pdf-printer
 ExecStart=/usr/bin/node /var/lib/remote-pdf-printer/server.js
 PrivateTmp=false
 WorkingDirectory=/var/lib/remote-pdf-printer
+Restart=always
 
 [Install]
 WantedBy=multi-user.target
