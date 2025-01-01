@@ -5,6 +5,9 @@ const logger = require('morgan');
 const helmet = require('helmet');
 const { constants } = require('crypto')
 const multer = require('multer');
+const SegfaultHandler = require('segfault-handler');
+
+SegfaultHandler.registerHandler("/var/log/remote-pdf-printer-crash.log");
 
 let formMulter = multer();
 
