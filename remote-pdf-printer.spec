@@ -4,7 +4,7 @@
 %global user      pdf
 
 Name:       remote-pdf-printer
-Version:    2.0.18
+Version:    2.0.19
 Release:    1%{?dist}
 Summary:    Server that accepts HTML/URLs and converts to PDFs
 
@@ -17,7 +17,7 @@ Source3:    remote-pdf-printer-clean.service
 Source4:    remote-pdf-printer-clean.timer
 
 BuildRequires:  nodejs-packaging systemd
-Requires:       nodejs >= 8.0 poppler-utils
+Requires:       nodejs >= 22.23.4 poppler-utils
 ExclusiveArch:  %{nodejs_arches} noarch
 
 %description
@@ -91,6 +91,10 @@ cp -a node_modules/* $RPM_BUILD_ROOT%{homedir}/node_modules/
 %{homedir}/api/routes/*.js
 
 %changelog
+* Sat Oct 24 2026 Nathanael Noblet <nathanael@gnat.ca> - 2.0.19-1
+- Bump package versions
+- Require newer nodejs to fix node2shell vul
+
 * Wed May 8 2024 Nathanael Noblet <nathanael@gnat.ca> - 2.0.18-1
 - Bump release
 
