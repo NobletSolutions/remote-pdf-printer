@@ -5,7 +5,7 @@
 
 Name:       remote-pdf-printer
 Version:    2.0.19
-Release:    1%{?dist}
+Release:    2%{?dist}
 Summary:    Server that accepts HTML/URLs and converts to PDFs
 
 License:    MIT
